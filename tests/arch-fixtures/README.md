@@ -6,5 +6,5 @@ importa desde ningún lado. `tests/arch/rules.test.ts` lo recorre y afirma que c
 archivo dispara la regla que dice violar (y que los controles positivos no disparan
 ninguna).
 
-Para verlo a mano: `pnpm arch:fixtures` (debe terminar con código 1 y listar las
+Para verlo a mano: `pnpm arch:fixtures` (debe terminar con un código distinto de 0, igual al número de violaciones, y listar las
 violaciones). Cómo agregar una regla: `docs/arquitectura/ARCHITECTURE.md` §3.4.

@@ -148,7 +148,7 @@ Cada nombre es el que aparece en la salida de `pnpm arch` y en `.dependency-crui
 **Composition root y Next.js**
 
 - `infrastructure-only-wired-in-container` — el `infrastructure/` de un módulo lo importa su propio `infrastructure/` o `src/infra/container.ts`. Nadie más instancia adaptadores (`app/(portal)/violates-app-infrastructure.ts`).
-- `app-only-presentation-and-application` — `src/app/` (rutas, layouts, middleware) importa `presentation/` y `application/`; nunca `domain/` ni `infrastructure/` (`app/(portal)/violates-app-domain.ts`).
+- `app-only-presentation-and-application` — `src/app/` (rutas y layouts; `middleware.ts` vive en la raíz de `src/`) importa `presentation/` y `application/`; nunca `domain/` ni `infrastructure/` (`app/(portal)/violates-app-domain.ts`).
 - `platform-infra-only-from-adapters` — `src/infra/` (cliente de base de datos, `withStoreTx`, adaptadores de plataforma) solo es alcanzable desde `infrastructure/` de módulos y desde el propio `src/infra/`. La única excepción es `src/infra/container.ts`, que `presentation/` y `src/app/` pueden importar para obtener los casos de uso cableados; y los puntos de entrada de Next.js en la raíz de `src/` (`instrumentation.ts`, `middleware.ts`, `proxy.ts`), que arrancan el proceso y pueden importar código de plataforma como `src/infra/env.ts` o `src/infra/security/`, pero no la base de datos (eso lo sigue bloqueando `drizzle-only-in-infrastructure`; control positivo `src/instrumentation.ts`) (`modules/catalog/presentation/violates-platform-infra-from-presentation.ts`).
 
 **Tenancy (ADR-0003 §4; threat model de tenancy C3 y brecha G6)**
