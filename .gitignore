@@ -6,3 +6,6 @@ next-env.d.ts
 !.env.example
 .env.keys
 infra/cloudflare/*.json
+coverage/
+*.log
+.DS_Store
