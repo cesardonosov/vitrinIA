@@ -1,24 +1,21 @@
 # Estado de VitrinIA
-Actualizado: 2026-10-07 22:10 (America/Santiago)
+Actualizado: 2026-10-08 07:30 (America/Santiago)
 
 ## Sprint actual
-Sprint 1 — Fundaciones y marca · cierre 2026-10-14 · 0/16 issues · plan aprobado por Cesar el 2026-10-07
+Sprint 1 — Fundaciones y marca · cierre 2026-10-14 · 9/16 issues mergeados en main · plan aprobado por Cesar el 2026-10-07
 Demo: el proyecto levanta con un comando y pasa todas las barreras de CI.
 Plan: `docs/sprints/sprint-01.md`.
 
 ## En curso
-- VIT-101 App base Next.js (builder) — PR #32, aprobado
-- VIT-102 Shared kernel (architect) — PR #38, ajustes del review aplicados
-- VIT-103 Reglas de capas (architect) — PR #45, aprobado
-- VIT-104 docker-compose (devops) — PR #41, aprobado por Security; re-review de código en curso
-- VIT-105 CI (devops) — PR #53, 11/11 jobs en verde; aplicando 3 cambios pedidos por Security
-- VIT-106 Secretos y env (devops) — PR #34, aprobado por Security; corregido el bloqueante del review
-- VIT-107 Esquema con RLS (builder) — PR #46, aprobado por Reviewer y Security
-- VIT-108 Threat model de tenancy (security) — PR #39; ADRs 0003/0004/0007 ajustados (v2), falta re-verificación
-- VIT-109 Arnés de cruce entre tiendas (security) — PR #56; Done cuando corra en CI
-- VIT-110 Store Config v1 (architect) — PR #55, en review
-- VIT-111 Marca (designer) — PR #33, ronda 3 esperando una pista de Cesar
-- VIT-115 Headers y CSP (builder) — PR #42, aprobado por Security; cierra #47
+Mergeados en `main` el 2026-10-08 con el OK de Cesar: VIT-101 (#32), VIT-106 (#34), VIT-104 (#41), VIT-105 CI (#53), VIT-107 esquema con RLS (#46), VIT-109 arnés de cruce (#56), VIT-110 Store Config v1 (#66, reemplaza a #55) y VIT-115 headers y CSP (#42). El plan y los docs (#31) también.
+
+- VIT-102 Shared kernel (architect) — PR #38, draft
+- VIT-103 Reglas de capas (architect) — PR #45, sobre #38
+- VIT-108 Threat model de tenancy (security) — PR #39, draft
+- VIT-111 Marca (designer) — Instantánea (ronda 2, camino 3), elegida por Cesar como provisoria; va dentro de #65
+- VIT-112 Design tokens y Storybook (designer) — PR #65, en re-review
+- VIT-113 Preset 1 (designer) — se hace con el catálogo real que trae Cesar (semillas para aves exóticas)
+- VIT-114 Verificación de la demo (qa) — pendiente
 - VIT-116 Deny de secretos para agentes (architect) — ADR-0009 propuesto, espera a Cesar
 
 ## Bloqueos
@@ -43,14 +40,14 @@ Plan: `docs/sprints/sprint-01.md`.
 6. ¿Techo mensual de gasto en tokens de los agentes? (los USD 50 de OPEX no lo cubren)
    A) Fijar un monto y medirlo en cada cierre  B) Sin techo por ahora
    Recomiendo: A
-7. Marca, ronda 3 (descartaste las rondas 1 y 2): una pista en una línea (una marca que te guste, colores, o qué no te gustó) para orientar la ronda 3.
+7. Marca: resuelta. Instantánea como provisoria (2026-10-08).
 8. Riesgo residual R3 (threat model): en la POC, quien tenga credenciales de `migrator` o acceso al PC ve todas las tiendas.
    A) Aceptarlo en la POC; rol de solo lectura auditado antes del piloto  B) Separar ambientes ya en Sprint 1
    Recomiendo: A
 9. Next 16 depreca `middleware.ts` en favor de `proxy.ts` (VIT-135). Cambiarlo toca VITRINIA.md §6.4.
    A) Mantener middleware.ts en la POC  B) Migrar con ADR en Sprint 2
    Recomiendo: B
-10. Rubro de la primera tienda real: se parte con ropa; avísame si es otro.
+10. Rubro de la primera tienda real: semillas para aves exóticas (Cesar trae el catálogo). El preset de ropa ya existe en Store Config v1.
 11. Acciones tuyas (no son decisiones): registrar vitrinia.cl y delegar DNS a Cloudflare antes del Sprint 2; crear el tablero de GitHub Projects (comandos en `docs/sprints/sprint-01.md`); aplicar el ruleset de `main` con los checks requeridos (13 pasos en `docs/runbooks/ci.md`, PR #53); instalar la app de Renovate.
 12. ADR-0009 (VIT-116): negar a los agentes la lectura de `.env.keys` y `.env` sin cifrar.
    A) Reglas deny y ask completas  B) Solo `.env.keys` por ahora
@@ -60,6 +57,9 @@ Plan: `docs/sprints/sprint-01.md`.
    Recomiendo: A
 
 ## Últimos cambios
+- 2026-10-08 · — · Cesar dijo "Mergea": 9 PRs en main; #55 reemplazado por #66 para que el CI corriera completo
+- 2026-10-08 · VIT-111 · Cesar eligió Instantánea (ronda 2, camino 3) como marca provisoria; tokens en PR #65
+- 2026-10-08 · VIT-113 · Primera tienda real: semillas para aves exóticas
 - 2026-10-07 · VIT-105 · Primera corrida de CI en verde (11 jobs); Security pide job de integración, regla set_config estricta y chequeo de WITH CHECK
 - 2026-10-07 · VIT-107/109 · RLS aprobado por Security tras 40+ ataques; arnés genérico de cruce con 8 mutaciones detectadas
 - 2026-10-08 · VIT-111 · Cesar descartó la ronda 2; ronda 3 espera su pista
