@@ -4,4 +4,6 @@ next-env.d.ts
 *.tsbuildinfo
 .env*
 !.env.example
-coverage
+coverage/
+*.log
+.DS_Store
