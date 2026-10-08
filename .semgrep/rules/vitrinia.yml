@@ -8,18 +8,21 @@ rules:
     message: >-
       `SET app.store_id` without LOCAL leaks the tenant context to the next request on the same
       pooled connection. Use withStoreTx (set_config('app.store_id', $1, true)). Threat model A1/C3.
-    pattern-regex: (?i)\bset\s+(?!local\b)(session\s+)?app\.store_id\b
+    pattern-regex: (?i)\bset\s+(?!local\b)(session\s+)?[\\"]{0,2}app\.store_id(?![\w])
     paths:
       include: ["*.ts", "*.tsx", "*.js", "*.mjs", "*.cjs", "*.sql", "*.sh"]
       exclude: ["node_modules"]
 
+  # Inverted rule: the third argument must be exactly the literal `true` (any case). `false`, 'f',
+  # 'false', a parameter ($2) or a variable all make the value session-scoped or unprovable.
   - id: vitrinia-set-config-session-scope
     languages: [generic]
     severity: ERROR
     message: >-
-      set_config(..., false) sets the value for the whole session, not the transaction.
-      The third argument must be true (transaction-local). Threat model A1/C3.
-    pattern-regex: (?is)\bset_config\s*\([^;]*?,\s*false\s*\)
+      set_config('app.store_id', value, is_local): the third argument must be exactly the literal
+      `true` (transaction-local). false, 'f', 'false', a parameter or a variable can leave the tenant
+      context on the pooled connection. Use withStoreTx. Threat model A1/C3.
+    pattern-regex: (?is)\bset_config\s*\(\s*[\\"'`]{0,3}app\.store_id[\\"'`]{0,3}\s*,(?:[^,;()]|\((?:[^()]|\([^()]*\))*\))*,\s*+(?!true\s*\))
     paths:
       include: ["*.ts", "*.tsx", "*.js", "*.mjs", "*.cjs", "*.sql", "*.sh"]
       exclude: ["node_modules"]

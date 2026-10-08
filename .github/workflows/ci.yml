@@ -198,14 +198,15 @@ jobs:
         with:
           persist-credentials: false
       - name: Create roles (same script as docker compose)
+        # Passwords travel in the environment (roles.psql reads them with \getenv), never on a command line.
         run: |
-          MIGRATOR_PW="$(openssl rand -hex 16)"
-          APP_PW="$(openssl rand -hex 16)"
-          echo "::add-mask::$MIGRATOR_PW"
-          echo "::add-mask::$APP_PW"
-          psql -v ON_ERROR_STOP=1 -v migrator_pw="$MIGRATOR_PW" -v app_pw="$APP_PW" \
-            -f infra/docker/postgres/init/roles.psql
-          echo "MIGRATOR_URL=postgresql://migrator:${MIGRATOR_PW}@127.0.0.1:5432/vitrinia" >> "$GITHUB_ENV"
+          MIGRATOR_PASSWORD="$(openssl rand -hex 16)"
+          APP_USER_PASSWORD="$(openssl rand -hex 16)"
+          echo "::add-mask::$MIGRATOR_PASSWORD"
+          echo "::add-mask::$APP_USER_PASSWORD"
+          export MIGRATOR_PASSWORD APP_USER_PASSWORD
+          psql -v ON_ERROR_STOP=1 -f infra/docker/postgres/init/roles.psql
+          echo "MIGRATOR_URL=postgresql://migrator:${MIGRATOR_PASSWORD}@127.0.0.1:5432/vitrinia" >> "$GITHUB_ENV"
       - uses: ./.github/actions/setup
         if: hashFiles('drizzle/migrations/**') != ''
       - name: Apply migrations as migrator
@@ -219,9 +220,65 @@ jobs:
           ADMIN_DATABASE_URL: postgresql://postgres:ci-ephemeral-admin@127.0.0.1:5432/vitrinia
         run: bash infra/ci/rls-check.sh
 
+  # Required check. Always runs so the check always reports; the steps are skipped until
+  # tests/integration exists (hashFiles is not allowed in a job-level `if`).
+  integration:
+    name: integration
+    needs: rls-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16.15-alpine
+        env:
+          # Ephemeral service on the runner; never the development database.
+          POSTGRES_PASSWORD: ci-ephemeral-admin
+          POSTGRES_DB: vitrinia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vitrinia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci-ephemeral-admin
+      PGDATABASE: vitrinia
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Create roles (same script as docker compose)
+        if: hashFiles('tests/integration/**') != ''
+        run: |
+          MIGRATOR_PASSWORD="$(openssl rand -hex 16)"
+          APP_USER_PASSWORD="$(openssl rand -hex 16)"
+          echo "::add-mask::$MIGRATOR_PASSWORD"
+          echo "::add-mask::$APP_USER_PASSWORD"
+          export MIGRATOR_PASSWORD APP_USER_PASSWORD
+          psql -v ON_ERROR_STOP=1 -f infra/docker/postgres/init/roles.psql
+          echo "MIGRATOR_URL=postgresql://migrator:${MIGRATOR_PASSWORD}@127.0.0.1:5432/vitrinia" >> "$GITHUB_ENV"
+          echo "APP_PW=${APP_USER_PASSWORD}" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/setup
+        if: hashFiles('tests/integration/**') != ''
+      - name: Apply migrations as migrator
+        if: hashFiles('tests/integration/**') != ''
+        env:
+          DATABASE_URL: ${{ env.MIGRATOR_URL }}
+        run: pnpm db:migrate
+      - name: Integration tests (RLS, pool leak, host resolution)
+        if: hashFiles('tests/integration/**') != ''
+        env:
+          TEST_DATABASE_URL: postgresql://app_user:${{ env.APP_PW }}@127.0.0.1:5432/vitrinia
+          TEST_MIGRATOR_DATABASE_URL: ${{ env.MIGRATOR_URL }}
+        run: pnpm test:integration
+
   build:
     name: build
-    needs: rls-check
+    needs: integration
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

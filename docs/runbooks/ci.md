@@ -18,9 +18,10 @@ Zona sensible. `.github/workflows/*` es archivo protegido: solo DevOps lo edita 
 | 8 | `semgrep` | Reglas propias de tenancy y XSS + `p/typescript` + `p/owasp-top-ten` | `pnpm semgrep:test` · `semgrep scan --error --severity ERROR --config .semgrep/rules .` |
 | 9 | `unit` | Tests y cobertura ≥ 90 % (umbral en `vitest.config.mts`) | `pnpm test:coverage` |
 | 10 | `rls-check` | RLS y roles en un Postgres efímero (service) | ver abajo |
-| 11 | `build` | `pnpm build` y `docker build --target app` / `worker` (sin push) | `pnpm build && docker build --target app .` |
+| 11 | `integration` | Tests de integración contra Postgres efímero con roles reales (`app_user` sin BYPASSRLS): RLS, fuga entre conexiones del pool, resolución de host. Los pasos se saltan mientras no exista `tests/integration/` (el check igual reporta verde) | ver abajo |
+| 12 | `build` | `pnpm build` y `docker build --target app` / `worker` (sin push) | `pnpm build && docker build --target app .` |
 
-Pendientes de agregar cuando existan sus insumos: `integration` (arnés de cruce de tiendas, VIT-109), `e2e` (Playwright) y `perf-budget`.
+Pendientes de agregar cuando existan sus insumos: `e2e` (Playwright) y `perf-budget`.
 
 `.github/workflows/todo-huerfanos.yml` corre los lunes 12:00 UTC (y a mano): si hay TODOs con issue cerrado o inexistente, abre o actualiza el issue `chore: TODOs huérfanos`.
 
@@ -29,7 +30,7 @@ Pendientes de agregar cuando existan sus insumos: `integration` (arnés de cruce
 Todas son `ERROR` y bloquean. Cada una tiene fixture positivo y negativo en `.semgrep/rules/vitrinia.ts(x)`; el job corre `semgrep --test` antes del escaneo.
 
 - `SET app.store_id` sin `LOCAL` (también `SET SESSION`).
-- `set_config(..., false)`.
+- `set_config('app.store_id', X, Y)` con `Y` distinto del literal `true` (cualquier caso): `false`, `'f'`, `'false'`, un parámetro o una variable fallan cerrado. También `SET "app.store_id"` entre comillas.
 - `sql.raw` con argumento no literal o con plantilla interpolada.
 - `dangerouslySetInnerHTML`, `innerHTML=`, `outerHTML=`. Excepción única: el serializador JSON-LD aprobado en `src/shared/seo/json-ld.tsx` (cualquier cambio ahí lo revisa Security).
 - `eval`, `new Function`, `Function(...)`.
@@ -44,18 +45,26 @@ Todas son `ERROR` y bloquean. Cada una tiene fixture positivo y negativo en `.se
 - falta `app_user`, `migrator` o `host_resolver` (para que el chequeo no pase en vacío), o `host_resolver` puede iniciar sesión o tiene `CREATEROLE`/`CREATEDB`;
 - `app_user`, `migrator` o `host_resolver` tienen `rolsuper` o `rolbypassrls`;
 - `app_user` tiene `CREATEROLE`/`CREATEDB`, es dueño de alguna relación o es miembro de `pg_read_all_data`, `pg_write_all_data` u otros roles de servidor;
-- una tabla o partición (`relkind IN ('r','p')`) con columna `store_id`, o la tabla `stores`, no tiene `relrowsecurity` y `relforcerowsecurity`, o no tiene ninguna política.
+- una tabla o partición (`relkind IN ('r','p')`) con columna `store_id`, o la tabla `stores`, no tiene `relrowsecurity` y `relforcerowsecurity`;
+- una tabla con `store_id` (o `stores`) no tiene política aplicable a INSERT y UPDATE: permisiva, para `app_user` o `PUBLIC`, con `USING` y `WITH CHECK` (no nulo) que contengan `current_setting('app.store_id'` (una sola `FOR ALL`, o `FOR INSERT` + `FOR UPDATE`). `USING (true)`, sin `WITH CHECK` o solo `FOR SELECT` no cuentan;
+- existe cualquier política permisiva para `app_user`/`PUBLIC` sobre una tabla de tienda que ignore `app.store_id` (las permisivas se combinan con OR: una `USING (true)` abre la tabla);
+- una partición tiene privilegio directo de `app_user` y no tiene política propia (la política del padre **no** se aplica cuando se consulta la partición directamente).
 
-`infra/ci/rls-check.sh` primero corre el chequeo real y después ocho autopruebas que deben fallar (tabla sin RLS, RLS sin FORCE, `bypassrls` en `app_user`, `migrator` y `host_resolver`, `host_resolver` con LOGIN, superusuario, `app_user` dueño de tabla). Hoy no hay tablas, así que el chequeo real pasa casi en vacío; las autopruebas demuestran que sabe fallar. Cuando exista `drizzle/migrations/`, el job aplica las migraciones como `migrator` con `pnpm db:migrate` (script que debe aportar VIT-107, lee `DATABASE_URL`).
+`infra/ci/rls-check.sh` primero corre el chequeo real y después autopruebas que deben fallar (tabla sin RLS, RLS sin FORCE, `bypassrls` en `app_user`, `migrator` y `host_resolver`, `host_resolver` con LOGIN, superusuario, `app_user` dueño de tabla, RLS forzada sin política, `USING (true)`, sin `WITH CHECK`, solo SELECT, política de otro rol, permisiva extra `USING (true)`, partición con privilegio directo sin política) y autopruebas que deben pasar (política `FOR ALL`, INSERT+UPDATE separadas, partición solo vía padre, partición con política propia). Hoy no hay tablas, así que el chequeo real pasa casi en vacío; las autopruebas demuestran que sabe fallar. Cuando exista `drizzle/migrations/`, el job aplica las migraciones como `migrator` con `pnpm db:migrate` (script que debe aportar VIT-107, lee `DATABASE_URL`).
 
 Local, contra un Postgres desechable (nunca el de desarrollo):
 
 ```bash
 docker run --rm -d --name pgci -e POSTGRES_PASSWORD=x -e POSTGRES_DB=vitrinia -p 127.0.0.1:55432:5432 postgres:16.15-alpine
-psql postgresql://postgres:x@127.0.0.1:55432/vitrinia -v migrator_pw=a -v app_pw=b -f infra/docker/postgres/init/roles.psql
+MIGRATOR_PASSWORD=$(openssl rand -hex 8) APP_USER_PASSWORD=$(openssl rand -hex 8) \
+  psql postgresql://postgres:x@127.0.0.1:55432/vitrinia -f infra/docker/postgres/init/roles.psql
 ADMIN_DATABASE_URL=postgresql://postgres:x@127.0.0.1:55432/vitrinia bash infra/ci/rls-check.sh
 docker rm -f pgci
 ```
+
+### Job `integration` (check requerido)
+
+Corre después de `rls-check`, con su propio service `postgres:16.15-alpine` efímero. Crea los roles con el mismo `roles.psql` que compose (contraseñas aleatorias, enmascaradas con `::add-mask::`, pasadas por entorno y `\getenv`, nunca por `-v`), aplica las migraciones como `migrator` (`pnpm db:migrate`) y ejecuta `pnpm test:integration` con `TEST_DATABASE_URL` (`app_user`, 127.0.0.1) y `TEST_MIGRATOR_DATABASE_URL`. Los pasos llevan `if: hashFiles('tests/integration/**') != ''` (`hashFiles` no existe en el `if` de un job); el job siempre reporta, por eso puede ser requerido desde ya. Local: `pnpm test:db:up`, `pnpm db:migrate:test`, `pnpm test:integration` (ver `levantar-entorno-local.md`).
 
 ## Reglas del pipeline (no negociables)
 
@@ -80,7 +89,7 @@ Los agentes no llaman a la API de protección. Pasos en GitHub (`Settings` del r
 4. Activar **Restrict deletions** y **Block force pushes**.
 5. Activar **Require linear history**.
 6. Activar **Require a pull request before merging**: marcar **Dismiss stale pull request approvals when new commits are pushed**. Aprobaciones requeridas: 1 si hay otra cuenta que pueda aprobar; si Cesar es la única cuenta, dejar 0 (el PR sigue siendo obligatorio y nadie empuja directo).
-7. Activar **Require status checks to pass** y **Require branches to be up to date before merging**. En **Add checks** agregar exactamente (nombre del job): `install`, `typecheck`, `lint`, `commitlint`, `architecture`, `todo-check`, `gitleaks`, `semgrep`, `unit`, `rls-check`, `build`. Los checks aparecen en el buscador solo después de que corrieron una vez: abrir primero un PR con el pipeline.
+7. Activar **Require status checks to pass** y **Require branches to be up to date before merging**. En **Add checks** agregar exactamente (nombre del job): `install`, `typecheck`, `lint`, `commitlint`, `architecture`, `todo-check`, `gitleaks`, `semgrep`, `unit`, `rls-check`, `integration`, `build`. Los checks aparecen en el buscador solo después de que corrieron una vez: abrir primero un PR con el pipeline.
 8. **Bypass list: vacía** (sin bypass para admins).
 9. **Create**.
 10. Instalar Renovate: <https://github.com/apps/renovate> → Configure → repositorio `vitrinia`.
