@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "name": "Tu tienda de ropa",
+    "tagline": "Prendas elegidas con cariño, pedidos por WhatsApp"
+  },
+  "theme": {
+    "colors": {
+      "primary": "#7c2d12",
+      "background": "#fffaf5",
+      "text": "#1c1917",
+      "onPrimary": "#ffffff",
+      "accent": "#b45309"
+    },
+    "font": "system-sans",
+    "radius": "md"
+  },
+  "contact": {
+    "whatsapp": "+56900000000"
+  },
+  "pages": {
+    "home": {
+      "sections": [
+        {
+          "type": "hero",
+          "props": {
+            "title": "Nueva temporada",
+            "subtitle": "Poleras, jeans y chaquetas con envío a todo Chile"
+          }
+        },
+        {
+          "type": "product-grid",
+          "props": {
+            "title": "Destacados",
+            "source": "featured",
+            "limit": 8
+          }
+        },
+        {
+          "type": "product-grid",
+          "props": {
+            "title": "Recién llegados",
+            "source": "latest",
+            "limit": 12
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "title": "Envíos y cambios",
+            "body": "Despachamos en 24 a 72 horas hábiles.\nCambios de talla dentro de 10 días con la prenda sin uso."
+          }
+        },
+        {
+          "type": "whatsapp-cta",
+          "props": {
+            "label": "Pregúntanos por WhatsApp",
+            "message": "Hola, vi tu tienda y quiero consultar por una prenda."
+          }
+        }
+      ]
+    }
+  },
+  "features": {
+    "showPrices": true,
+    "showStock": true,
+    "whatsappCheckout": true,
+    "paymentLinkCheckout": false,
+    "search": true
+  }
+}

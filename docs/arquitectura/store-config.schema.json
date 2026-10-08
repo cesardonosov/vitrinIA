@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/StoreConfigV1",
+  "$defs": {
+    "StoreConfigV1": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "type": "number",
+          "const": 1
+        },
+        "identity": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "tagline": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "logoImageId": {
+              "type": "string"
+            }
+          },
+          "required": ["name"],
+          "additionalProperties": false
+        },
+        "theme": {
+          "type": "object",
+          "properties": {
+            "colors": {
+              "type": "object",
+              "properties": {
+                "primary": {
+                  "type": "string",
+                  "pattern": "^#[0-9a-f]{6}$"
+                },
+                "background": {
+                  "type": "string",
+                  "pattern": "^#[0-9a-f]{6}$"
+                },
+                "text": {
+                  "type": "string",
+                  "pattern": "^#[0-9a-f]{6}$"
+                },
+                "onPrimary": {
+                  "default": "#ffffff",
+                  "description": "Texto sobre primary (botones, badges). Si falta, la vitrina usa #ffffff y el validador comprueba ese valor.",
+                  "type": "string",
+                  "pattern": "^#[0-9a-f]{6}$"
+                },
+                "accent": {
+                  "type": "string",
+                  "pattern": "^#[0-9a-f]{6}$"
+                }
+              },
+              "required": ["primary", "background", "text"],
+              "additionalProperties": false
+            },
+            "font": {
+              "type": "string",
+              "enum": ["system-sans", "system-serif", "system-mono"]
+            },
+            "radius": {
+              "type": "string",
+              "enum": ["none", "sm", "md", "lg"]
+            }
+          },
+          "required": ["colors", "font", "radius"],
+          "additionalProperties": false
+        },
+        "contact": {
+          "type": "object",
+          "properties": {
+            "whatsapp": {
+              "type": "string",
+              "pattern": "^\\+569\\d{8}$"
+            },
+            "paymentLink": {
+              "type": "string",
+              "maxLength": 2048
+            }
+          },
+          "required": ["whatsapp"],
+          "additionalProperties": false
+        },
+        "pages": {
+          "type": "object",
+          "properties": {
+            "home": {
+              "type": "object",
+              "properties": {
+                "sections": {
+                  "maxItems": 7,
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "hero"
+                          },
+                          "props": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string",
+                                "maxLength": 80
+                              },
+                              "subtitle": {
+                                "type": "string",
+                                "maxLength": 160
+                              },
+                              "imageId": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["title"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": ["type", "props"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "product-grid"
+                          },
+                          "props": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string",
+                                "maxLength": 80
+                              },
+                              "source": {
+                                "type": "string",
+                                "enum": ["featured", "latest", "all"]
+                              },
+                              "limit": {
+                                "type": "integer",
+                                "minimum": 1,
+                                "maximum": 48
+                              }
+                            },
+                            "required": ["source", "limit"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": ["type", "props"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "text"
+                          },
+                          "props": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string",
+                                "maxLength": 80
+                              },
+                              "body": {
+                                "type": "string",
+                                "maxLength": 2000
+                              }
+                            },
+                            "required": ["body"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": ["type", "props"],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "whatsapp-cta"
+                          },
+                          "props": {
+                            "type": "object",
+                            "properties": {
+                              "label": {
+                                "type": "string",
+                                "maxLength": 40
+                              },
+                              "message": {
+                                "type": "string",
+                                "maxLength": 160
+                              }
+                            },
+                            "required": ["label"],
+                            "additionalProperties": false
+                          }
+                        },
+                        "required": ["type", "props"],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": ["sections"],
+              "additionalProperties": false
+            }
+          },
+          "required": ["home"],
+          "additionalProperties": false
+        },
+        "features": {
+          "type": "object",
+          "properties": {
+            "showPrices": {
+              "type": "boolean"
+            },
+            "showStock": {
+              "type": "boolean"
+            },
+            "whatsappCheckout": {
+              "type": "boolean"
+            },
+            "paymentLinkCheckout": {
+              "type": "boolean"
+            },
+            "search": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "showPrices",
+            "showStock",
+            "whatsappCheckout",
+            "paymentLinkCheckout",
+            "search"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "identity",
+        "theme",
+        "contact",
+        "pages",
+        "features"
+      ],
+      "additionalProperties": false,
+      "title": "VitrinIA Store Config v1",
+      "description": "Configuración de una tienda VitrinIA (ADR-0004). Todos los objetos son estrictos; textos en texto plano; imágenes por id; URLs solo de la allowlist por campo."
+    }
+  }
+}
