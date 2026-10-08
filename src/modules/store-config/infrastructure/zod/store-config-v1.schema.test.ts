@@ -122,6 +122,43 @@ describe("StoreConfigV1 schema: strict objects (AC2)", () => {
   });
 });
 
+describe("StoreConfigV1 schema: issues never echo attacker-controlled keys", () => {
+  const MARKER = "__vit_marker_7f3a9c__";
+
+  it.each([
+    ["root", (d: Record<string, unknown>) => (d[MARKER] = 1)],
+    [
+      "identity",
+      (d: Record<string, unknown>) =>
+        ((d.identity as Record<string, unknown>)[MARKER] = "x"),
+    ],
+    [
+      "section props",
+      (d: Record<string, unknown>) => {
+        const sections = (
+          d.pages as {
+            home: { sections: Array<{ props: Record<string, unknown> }> };
+          }
+        ).home.sections;
+        if (sections[0]) sections[0].props[MARKER] = true;
+      },
+    ],
+    [
+      "features",
+      (d: Record<string, unknown>) =>
+        ((d.features as Record<string, unknown>)[MARKER] = false),
+    ],
+  ])("unknown key in %s: not in any message or path", (_label, mutate) => {
+    const issues = issuesOf(withPatch(mutate));
+    expect(issues.length).toBeGreaterThan(0);
+    for (const issue of issues) {
+      expect(issue.message).not.toContain(MARKER);
+      expect(issue.path).not.toContain(MARKER);
+    }
+    expect(JSON.stringify(issues)).not.toContain(MARKER);
+  });
+});
+
 describe("StoreConfigV1 schema: colours and urls (AC3)", () => {
   it.each(["red", "#fff", "#ffffff;", "rgb(0,0,0)", "#ffffff00"])(
     "rejects colour %s with a typed error at theme.colors.primary",
