@@ -21,6 +21,22 @@ describe("RESERVED_SLUGS", () => {
     }
   });
 
+  it("reserves auto-discovery, proxy, mail and hosting-panel hostnames", () => {
+    for (const slug of [
+      "wpad",
+      "isatap",
+      "proxy",
+      "noreply",
+      "no-reply",
+      "email",
+      "webmail",
+      "cpanel",
+      "cloudflare",
+    ]) {
+      expect(isReservedSlug(slug), slug).toBe(true);
+    }
+  });
+
   it("blocks impersonation of payment providers and big brands", () => {
     for (const slug of [
       "mercadopago",

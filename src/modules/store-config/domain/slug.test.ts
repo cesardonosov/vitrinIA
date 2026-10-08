@@ -20,6 +20,12 @@ describe("toSlugCandidate", () => {
     ["--ropa--", "ropa"],
     ["ropa!@#$%", "ropa"],
     ["日本", ""],
+    // NFKC compatibility folding before NFD: fullwidth, ligatures, superscripts
+    ["ａｐｐ", "app"],
+    ["ＡＤＭＩＮ", "admin"],
+    ["ﬁno", "fino"],
+    ["tienda²", "tienda2"],
+    ["Ⓐdmin", "admin"],
   ])("%s -> %s", (input, expected) => {
     expect(toSlugCandidate(input)).toBe(expected);
   });
@@ -101,6 +107,12 @@ describe("normalizeSlug (onboarding input)", () => {
   it("rejects when the normalised form is reserved", () => {
     expect(errorOf(normalizeSlug("Admin")).reason).toBe("reserved");
     expect(errorOf(normalizeSlug("Mercado Pago")).reason).toBe("reserved");
+  });
+
+  it("folds compatibility characters so look-alikes of reserved words are reserved", () => {
+    expect(errorOf(normalizeSlug("ａｐｐ")).reason).toBe("reserved");
+    expect(errorOf(normalizeSlug("ｗｗｗ")).reason).toBe("reserved");
+    expect(errorOf(normalizeSlug("Ⓐdmin")).reason).toBe("reserved");
   });
 
   it("rejects when nothing survives", () => {

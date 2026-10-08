@@ -79,6 +79,15 @@ const AUTH_AND_INFRA = [
   "autodiscover",
   "autoconfig",
   "mta-sts",
+  "wpad",
+  "isatap",
+  "proxy",
+  "noreply",
+  "no-reply",
+  "email",
+  "webmail",
+  "cpanel",
+  "cloudflare",
 ] as const;
 
 const BRANDS_AND_PAYMENTS = [

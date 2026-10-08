@@ -41,9 +41,17 @@ function invalid(
   });
 }
 
-/** Lowercase, strip diacritics (ñ -> n), map separators to `-`, drop the rest. */
+/**
+ * Lowercase, strip diacritics (ñ -> n), map separators to `-`, drop the rest.
+ *
+ * NFKC first: compatibility characters (fullwidth `ａｐｐ`, ligatures `ﬁ`,
+ * enclosed `Ⓐ`, superscripts) fold to their ASCII equivalents, so look-alikes
+ * of reserved words hit the reserved list instead of slipping through as
+ * "nothing survives". Then NFD + strip combining marks removes accents.
+ */
 export function toSlugCandidate(input: string): string {
   return input
+    .normalize("NFKC")
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
     .toLowerCase()
