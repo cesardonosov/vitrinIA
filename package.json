@@ -17,11 +17,20 @@
     "prepare": "lefthook install",
     "dev:up": "docker compose --env-file .env.local up -d --build --wait",
     "dev:down": "docker compose --env-file .env.local down",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:migrate:test": "DATABASE_URL=\"$TEST_MIGRATOR_DATABASE_URL\" drizzle-kit migrate",
+    "db:migrate:compose": "docker compose --env-file .env.local --profile tools run --rm migrate",
+    "test:db:up": "docker compose -f docker-compose.test.yml up -d --wait",
+    "test:db:down": "docker compose -f docker-compose.test.yml down -v",
+    "test:integration": "vitest run --config vitest.integration.config.mts"
   },
   "dependencies": {
     "@dotenvx/dotenvx": "^2.33.0",
+    "drizzle-orm": "0.45.3",
     "next": "^16.4.0",
+    "pg": "8.23.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "zod": "^4.6.5"
@@ -29,9 +38,11 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
     "@types/node": "^22.20.5",
+    "@types/pg": "8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitest/coverage-v8": "^5.0.3",
+    "drizzle-kit": "0.31.11",
     "lefthook": "^2.2.0",
     "typescript": "6.0.3",
     "vitest": "^5.0.3"
