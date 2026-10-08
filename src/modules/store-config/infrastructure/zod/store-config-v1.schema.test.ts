@@ -248,6 +248,22 @@ describe("StoreConfigV1 schema: texts are plain text (AC4)", () => {
     ).toContain("identity.name");
   });
 
+  it.each([
+    ["NEL", "Ropa\u0085Linda"],
+    ["RLO", "Ropa ‮adniL"],
+    ["ZWSP", "Ropa​Linda"],
+    ["BOM", "﻿Ropa Linda"],
+    ["line separator", "Ropa Linda"],
+    ["lone surrogate", "Ropa\ud800Linda"],
+    ["only ZWSP", "​​"],
+  ])("rejects invisible or malformed text (%s) at identity.name", (_l, v) => {
+    expect(
+      pathsOf(
+        withPatch((d) => ((d.identity as Record<string, unknown>).name = v)),
+      ),
+    ).toContain("identity.name");
+  });
+
   it("enforces the length limit per field", () => {
     expect(
       pathsOf(

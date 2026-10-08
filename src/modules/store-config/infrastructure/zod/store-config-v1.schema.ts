@@ -11,7 +11,7 @@ import {
   STORE_CONFIG_SCHEMA_VERSION,
   type StoreConfigV1,
 } from "../../domain/store-config";
-import { isPlainText, TEXT_LIMITS } from "../../domain/text";
+import { isBlankText, isPlainText, TEXT_LIMITS } from "../../domain/text";
 import { checkUrlForField, URL_MAX_LENGTH } from "../../domain/url-allowlist";
 
 /**
@@ -34,10 +34,13 @@ const plainText = (max: number) =>
   z
     .string()
     .max(max)
-    .refine((value) => value.trim().length > 0, {
+    .refine((value) => !isBlankText(value), {
       message: "text must not be blank",
     })
-    .refine(isPlainText, { message: "control characters are not allowed" });
+    .refine(isPlainText, {
+      message:
+        "control, format, separator or malformed characters are not allowed",
+    });
 
 const optionalPlainText = (max: number) => plainText(max).optional();
 
