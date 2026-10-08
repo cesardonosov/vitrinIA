@@ -1,11 +1,25 @@
-# Módulo store-config (base de tenancy)
+# Módulo store-config
 
-Estado: Sprint 1 (VIT-107). Contiene por ahora solo las tablas raíz de tenancy `stores` y `domains`; el Store Config validado con Zod (ADR-0004) llega con VIT-110. Contrato de seguridad: [`docs/security/threat-models/tenancy.md`](../../security/threat-models/tenancy.md) §5 (C1 a C15) y ADR-0003.
+Estado: Sprint 1 (VIT-107 + VIT-110). Contiene las tablas raíz de tenancy `stores` y `domains` (VIT-107) y el contrato del **Store Config v1** validado con Zod y versionado (VIT-110, ADR-0004 v2). La persistencia del config en `jsonb` y sus casos de uso de escritura (con `audit_log`) llegan en Sprint 2. Contrato de seguridad: [`docs/security/threat-models/tenancy.md`](../../security/threat-models/tenancy.md) §5 (C1 a C15) y §9, ADR-0003 y ADR-0004.
 
 ## Archivos
 
 | Ruta | Qué es |
 |---|---|
+| `src/modules/store-config/domain/store-config.ts` | Tipos puros del Store Config v1, `STORE_CONFIG_SCHEMA_VERSION`, lista cerrada de secciones y de feature flags |
+| `src/modules/store-config/domain/{color,fonts,phone,text}.ts` | Reglas puras: hex `#rrggbb` y contraste AA, fuentes y radios cerrados con su stack CSS, E.164 móvil chileno, texto plano y límites por campo |
+| `src/modules/store-config/domain/slug.ts` + `reserved-slugs.ts` | `normalizeSlug` / `validateSlug` y lista reservada (ADR-0004 §8) |
+| `src/modules/store-config/domain/url-allowlist.ts` | Allowlist de esquema y host **por campo URL** (ADR-0004 §3) |
+| `src/modules/store-config/domain/migrations/` | Cadena `MIGRATIONS` (`vN -> vN+1`, puras) y `migrateToCurrent` |
+| `src/modules/store-config/domain/presets/ropa.ts` | `ROPA_PRESET`: Store Config v1 válido del rubro inicial (decisión #10 de Cesar) |
+| `src/modules/store-config/application/ports/store-config-validator.ts` | Puerto `StoreConfigValidator` |
+| `src/modules/store-config/application/parse-store-config.ts` | `parseStoreConfig(input, validator)`: migrar en memoria → validar |
+| `src/modules/store-config/application/index.ts` | Única superficie pública del módulo |
+| `src/modules/store-config/infrastructure/zod/store-config-v1.schema.ts` | Esquema Zod `storeConfigV1Schema` (`strictObject` en todos los niveles) |
+| `src/modules/store-config/infrastructure/zod/zod-store-config-validator.ts` | Adaptador del puerto (`zodStoreConfigValidator`) |
+| `src/modules/store-config/infrastructure/zod/json-schema.ts` | Generador de `docs/arquitectura/store-config.schema.json` (`pnpm docs:store-config-schema`) |
+| `tests/fixtures/store-config/v*/` | Fixtures por versión histórica; CI los migra y valida todos |
+| `docs/arquitectura/store-config.schema.json` | JSON Schema (draft 2020-12) generado; un test falla si queda desactualizado |
 | `src/modules/store-config/infrastructure/schema.ts` | Tablas Drizzle `stores` y `domains` (columnas, checks, únicos) |
 | `drizzle/migrations/0000_tenancy_base.sql` | Migración: tablas generadas + sección escrita a mano (RLS, grants, `resolve_host`) |
 | `drizzle/rollbacks/0000_tenancy_base.down.sql` | Rollback (destruye datos: en producción, backup + migración correctiva) |
@@ -43,7 +57,79 @@ UUID v7 generado por la app (sin `DEFAULT`; un `CHECK` rechaza otras versiones),
 
 Sigue `schema-change` y `db-migration`: `store_id uuid not null`, `UNIQUE (store_id, id)`, FK compuestas, índice con `store_id` primero, y en la misma migración `ENABLE`/`FORCE` RLS, política con `USING` y `WITH CHECK` con la expresión de arriba y el `GRANT` mínimo. Agrega su fila al test de enumeración de VIT-109.
 
-## Pendiente conocido
+## Store Config v1 (VIT-110)
+
+### Dónde vive cada cosa y por qué
+
+```mermaid
+flowchart LR
+  subgraph domain["domain/ (TypeScript puro)"]
+    T[store-config.ts<br/>tipos y constantes]
+    R[color · fonts · phone · text<br/>slug · reserved-slugs · url-allowlist]
+    M[migrations/<br/>v0→v1 · migrateToCurrent]
+    P[presets/ropa.ts]
+  end
+  subgraph application["application/"]
+    PORT[StoreConfigValidator<br/>puerto]
+    UC[parseStoreConfig]
+  end
+  subgraph infrastructure["infrastructure/zod/"]
+    Z[storeConfigV1Schema<br/>strictObject]
+    A[zodStoreConfigValidator]
+    J[json-schema.ts]
+  end
+  UC --> M
+  UC --> PORT
+  A -. implementa .-> PORT
+  Z --> R
+  Z --> T
+  J --> Z
+```
+
+- `domain/` y `application/` no importan paquetes (ADR-0008: `domain-is-pure`, `application-only-domain-and-kernel`). Por eso **el esquema Zod es un adaptador de infraestructura** del puerto `StoreConfigValidator`, no un archivo de dominio. Cada regla que Zod aplica delega en una función pura del dominio (`isPlainText`, `meetsAaContrast`, `checkUrlForField`, `CHILEAN_MOBILE_E164_PATTERN`, `FONT_IDS`...), así que el contrato tiene una sola fuente de verdad y se puede testear sin Zod.
+- El tipo inferido del esquema se comprueba en compilación contra `StoreConfigV1` del dominio (`store-config-v1.schema.ts`, al final): si divergen, falla `pnpm typecheck`.
+- `parseStoreConfig` es la **única entrada** para datos no confiables (fila `jsonb`, seed, formulario, parche MCP): `migrateToCurrent` (puro, en memoria) y luego `validator.validate`. Lectura y escritura pasan por el mismo camino ("dos validaciones por diseño", ADR-0004).
+- La vitrina obtiene el validador cableado desde `src/infra/container.ts` (lo crea el primer caso de uso que persista, Sprint 2); `presentation/` nunca importa `infrastructure/`.
+
+### Forma del contrato
+
+| Campo | Tipo | Regla |
+|---|---|---|
+| `schemaVersion` | literal `1` | Otro valor se rechaza; los antiguos se migran antes |
+| `identity.name` / `tagline` | texto plano ≤ 80 / ≤ 160 | Sin control chars, no en blanco. `<script>` son caracteres, React escapa |
+| `identity.logoImageId` | UUID v7 (`ImageStorage`) | Nunca una URL |
+| `theme.colors.{primary,background,text,accent?}` | `#rrggbb` en minúsculas | `text` sobre `background` ≥ 4.5:1 (AA). Se emiten como `--color-*` |
+| `theme.font` / `theme.radius` | enum `FONT_IDS` / `RADIUS_IDS` | El valor CSS sale de `FONT_STACKS` / `RADIUS_VALUES` en código, nunca del config |
+| `contact.whatsapp` | `+569XXXXXXXX` | La vitrina construye `https://wa.me/<dígitos>`; el host es fijo |
+| `contact.paymentLink` | opcional; `https:` + host de la allowlist | **La allowlist de hosts está vacía: espera la decisión E1 de Cesar** (STATUS.md "Esperando a Cesar" #1). Hoy cualquier valor se rechaza con `UrlNotAllowed(reason: "host")` y el campo solo puede estar ausente |
+| `pages.home.sections[]` | ≤ 7 de `hero` · `product-grid` · `text` · `whatsapp-cta` | Unión discriminada por `type`; `props` estricto por tipo. Solo `home` en v1; otras páginas se agregan sin migración |
+| `features.*` | boolean, claves cerradas (`showPrices`, `showStock`, `whatsappCheckout`, `paymentLinkCheckout`, `search`) | **No son controles de seguridad** (ADR-0004 §9): ninguna validación, aislamiento ni CSP lee una flag |
+
+Todos los objetos son `z.strictObject`: una clave desconocida (incluidas `html`, `css`, `style`, `className`) rechaza la escritura. No hay `z.any`, `z.unknown`, `z.record` ni `.transform()`: lo que entra es lo que se guarda.
+
+### Slug
+
+El slug vive en `stores.slug` (VIT-107), no dentro del `jsonb`; las reglas sí viven aquí. `normalizeSlug("Mi Tienda Ñandú")` → `mi-tienda-nandu` es lo que usan el onboarding y el MCP sobre texto libre; `validateSlug` exige la forma canónica (`[a-z0-9]` con guiones internos simples, 3–40, sin `xn--`, no reservado) y devuelve el candidato normalizado en el error. Lista reservada: `reserved-slugs.ts` (plataforma, auth/infra, marcas y pagos, ofensivas). Renombrar con tombstone y 301 es de VIT-121.
+
+### Versionado
+
+- `STORE_CONFIG_SCHEMA_VERSION = 1`. v0 es la forma plana del prototipo de Sprint 0 (`tests/fixtures/store-config/v0/`); existe para ejercitar la cadena desde el primer día.
+- Cambio incompatible: subir la constante, agregar `migrations/vN-to-vN+1.ts` (pura, total, nunca lanza), registrarla en `MIGRATIONS`, crear `tests/fixtures/store-config/vN+1/` y regenerar el JSON Schema. `fixtures.test.ts` falla si falta un eslabón o un fixture.
+- `migrateToCurrent` falla cerrado: sin `schemaVersion` entero, versión más nueva que el build, o hueco en la cadena → `UnsupportedSchemaVersion`.
+- El job del worker que persiste configs migradas (ADR-0004 §4) y la auditoría de escritura (§7) son de Sprint 2.
+
+### Errores tipados
+
+`InvalidStoreConfig { issues: [{ path, message }] }` (ruta del campo, nunca el valor rechazado), `UnsupportedSchemaVersion`, `InvalidSlug { reason, normalized? }`, `UrlNotAllowed { field, reason }`. Todos viajan en `Result`, nunca se lanzan.
+
+### Pendiente conocido (VIT-110)
+
+- **E1 (Cesar):** hosts permitidos para `contact.paymentLink`. Al decidirse, se llena la fila en `url-allowlist.ts` con revisión de Security; no hace falta subir `schemaVersion`.
+- El registro de componentes de `storefront` (Sprint 2) debe cubrir exactamente `SECTION_TYPES`; ese test vive en `storefront`.
+- La skill `create-preset` describe `pages.home.sections[]` con `component`/`variant`; el contrato real usa `type`/`props` (ADR-0004 §1). Ajustar la skill (Orchestrator).
+- Fuentes: solo stacks de sistema. Agregar una fuente empaquetada es tarea del Designer (id en `FONT_IDS` + archivo self-hosted en `storefront`).
+
+## Pendiente conocido (tenancy)
 
 - Los seeds de desarrollo deben insertar por tienda dentro de `withStoreTx` (C15); aún no hay seeds.
 - `app_user` puede escribir `verified_at` de sus propios dominios: la regla de que un subdominio solo se verifica en el alta y de que los nombres reservados (`app`, `www`, ...) no se pueden reclamar es de los casos de uso (VIT-121).

@@ -18,6 +18,7 @@
     "dev:up": "docker compose --env-file .env.local up -d --build --wait",
     "dev:down": "docker compose --env-file .env.local down",
     "test:coverage": "vitest run --coverage",
+    "docs:store-config-schema": "WRITE_STORE_CONFIG_SCHEMA=1 vitest run src/modules/store-config/infrastructure/zod/json-schema.test.ts && biome format --write docs/arquitectura/store-config.schema.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:test": "DATABASE_URL=\"$TEST_MIGRATOR_DATABASE_URL\" drizzle-kit migrate",

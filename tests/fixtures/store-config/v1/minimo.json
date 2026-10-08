@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "identity": { "name": "Tienda Mínima" },
+  "theme": {
+    "colors": {
+      "primary": "#1d4ed8",
+      "background": "#ffffff",
+      "text": "#111827"
+    },
+    "font": "system-sans",
+    "radius": "md"
+  },
+  "contact": { "whatsapp": "+56912345678" },
+  "pages": { "home": { "sections": [] } },
+  "features": {
+    "showPrices": true,
+    "showStock": false,
+    "whatsappCheckout": true,
+    "paymentLinkCheckout": false,
+    "search": true
+  }
+}
