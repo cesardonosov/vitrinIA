@@ -26,4 +26,6 @@ GRANT USAGE ON SCHEMA public TO app_user;
 -- It must be created here because migrator has NOCREATEROLE.
 CREATE ROLE host_resolver NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
 -- Needed so the migration (running as migrator) can do ALTER FUNCTION ... OWNER TO host_resolver.
-GRANT host_resolver TO migrator;
+-- Minimal form (PG16): SET TRUE allows the ownership change; INHERIT FALSE means migrator
+-- does NOT silently inherit host_resolver's privileges.
+GRANT host_resolver TO migrator WITH INHERIT FALSE, SET TRUE;
