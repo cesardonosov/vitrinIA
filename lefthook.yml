@@ -1,0 +1,13 @@
+pre-commit:
+  parallel: false
+  commands:
+    block-plain-env-files:
+      run: |
+        bad=$(git diff --cached --name-only --diff-filter=ACM | grep -E '(^|/)\.env($|\.)|(^|/)\.env\.keys$' | grep -v -E '(^|/)\.env\.example$' || true)
+        if [ -n "$bad" ]; then
+          echo "Blocked: env files must not be committed:"
+          echo "$bad"
+          exit 1
+        fi
+    gitleaks:
+      run: gitleaks protect --staged --redact --verbose
