@@ -16,6 +16,13 @@ const KERNEL = "^src/shared/kernel/";
 /** The only place allowed to import `infrastructure/` of several modules. */
 const COMPOSITION_ROOT = "^src/infra/container\\.ts$";
 
+/**
+ * Next.js framework entry points that live at the root of src/ and bootstrap
+ * the process (env validation, request headers). They may import platform
+ * code in src/infra/ but never the database surface.
+ */
+const FRAMEWORK_ENTRY_POINTS = "^src/(instrumentation|middleware|proxy)\\.ts$";
+
 /** Public entry point of a module: the only thing another module may import. */
 const MODULE_PUBLIC_API = "^src/modules/[^/]+/application/index\\.ts$";
 
@@ -124,11 +131,15 @@ module.exports = {
     {
       name: "platform-infra-only-from-adapters",
       comment:
-        "src/infra/ (db client, withStoreTx, platform adapters) is reachable only from module infrastructure/ and from src/infra/ itself; app/ and presentation/ may import the composition root.",
+        "src/infra/ (db client, withStoreTx, platform adapters) is reachable only from module infrastructure/ and from src/infra/ itself; app/ and presentation/ may import the composition root, and the Next.js entry points (instrumentation, middleware/proxy) may import platform code but not the database (see drizzle-only-in-infrastructure).",
       severity: "error",
       from: {
         path: "^src/",
-        pathNot: ["^src/modules/[^/]+/infrastructure/", "^src/infra/"],
+        pathNot: [
+          "^src/modules/[^/]+/infrastructure/",
+          "^src/infra/",
+          FRAMEWORK_ENTRY_POINTS,
+        ],
       },
       to: { path: "^src/infra/", pathNot: COMPOSITION_ROOT },
     },
