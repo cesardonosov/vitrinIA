@@ -1,0 +1,99 @@
+# Custom Semgrep rules for VitrinIA (VIT-105). Every rule is ERROR and blocks the PR.
+# Sources: threat model tenancy (C3, C11, G8) and pre-mortem Security control 6.
+# Each rule has a fixture in .semgrep/ (run: pnpm semgrep:test).
+rules:
+  - id: vitrinia-set-store-id-without-local
+    languages: [generic]
+    severity: ERROR
+    message: >-
+      `SET app.store_id` without LOCAL leaks the tenant context to the next request on the same
+      pooled connection. Use withStoreTx (set_config('app.store_id', $1, true)). Threat model A1/C3.
+    pattern-regex: (?i)\bset\s+(?!local\b)(session\s+)?app\.store_id\b
+    paths:
+      include: ["*.ts", "*.tsx", "*.js", "*.mjs", "*.cjs", "*.sql", "*.sh"]
+      exclude: ["node_modules"]
+
+  - id: vitrinia-set-config-session-scope
+    languages: [generic]
+    severity: ERROR
+    message: >-
+      set_config(..., false) sets the value for the whole session, not the transaction.
+      The third argument must be true (transaction-local). Threat model A1/C3.
+    pattern-regex: (?is)\bset_config\s*\([^;]*?,\s*false\s*\)
+    paths:
+      include: ["*.ts", "*.tsx", "*.js", "*.mjs", "*.cjs", "*.sql", "*.sh"]
+      exclude: ["node_modules"]
+
+  - id: vitrinia-sql-raw-interpolation
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      sql.raw() with interpolated or non-literal input is SQL injection and can bypass the
+      parametrized withStoreTx path. Use sql`...${param}` placeholders instead.
+    patterns:
+      - pattern: sql.raw($ARG)
+      - pattern-not: sql.raw("...")
+      - pattern-not: sql.raw('...')
+      - pattern-not: sql.raw(`...`)
+      - pattern-not-inside: sql.raw(`...`)
+    paths:
+      exclude: ["node_modules"]
+
+  - id: vitrinia-sql-raw-template-interpolation
+    languages: [typescript]
+    severity: ERROR
+    message: sql.raw() with a template literal that interpolates values is SQL injection.
+    pattern-regex: sql\s*\.\s*raw\s*\(\s*`[^`]*\$\{
+    paths:
+      exclude: ["node_modules"]
+
+  - id: vitrinia-dangerously-set-inner-html
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      dangerouslySetInnerHTML is forbidden: the seller's content is never free HTML. The only
+      exception is the approved JSON-LD serializer (src/shared/seo/json-ld.tsx), reviewed by Security.
+    pattern-either:
+      - pattern: <$C ... dangerouslySetInnerHTML={...} ... />
+      - pattern: <$C ... dangerouslySetInnerHTML={...}>...</$C>
+      - pattern: |
+          { ..., dangerouslySetInnerHTML: $V, ... }
+      - pattern: $E.innerHTML = $V
+      - pattern: $E.outerHTML = $V
+    paths:
+      exclude: ["node_modules", "**/src/shared/seo/json-ld.tsx"]
+
+  - id: vitrinia-eval-or-new-function
+    languages: [typescript]
+    severity: ERROR
+    message: eval() and new Function() execute strings as code; never use them.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+      - pattern: Function(...)
+      - pattern: globalThis.eval(...)
+      - pattern: window.eval(...)
+    paths:
+      exclude: ["node_modules"]
+
+  # G8 / C11: middleware.ts never authorizes. Headers it writes must not feed access decisions.
+  # Convention (see docs/runbooks/ci.md): any header the middleware sets for downstream code uses
+  # the `x-vitrinia-` prefix. The store/tenant/user style names are blocked as well, and
+  # X-Forwarded-Host is never a source of the host (C12). Reading them is only allowed in
+  # src/middleware.ts itself.
+  - id: vitrinia-middleware-header-in-authorization
+    languages: [typescript]
+    severity: ERROR
+    message: >-
+      Do not read headers written by middleware.ts (x-vitrinia-*, x-store-*, x-tenant-*, x-user-*,
+      x-middleware-*, x-forwarded-host) in server code. The middleware is not a security barrier
+      (CVE-2025-29927): derive storeId from the session (portal) or from the Host resolved on the
+      server (storefront). Threat model C11/G8.
+    patterns:
+      - pattern: $H.get($NAME)
+      - metavariable-regex:
+          metavariable: $NAME
+          regex: (?i)^["'`]x-(vitrinia-.*|store-.*|tenant-.*|user-.*|middleware-.*|forwarded-host)["'`]$
+    paths:
+      include: ["**/src/**"]
+      exclude: ["**/src/middleware.ts", "**/*.test.ts", "**/*.test.tsx"]
