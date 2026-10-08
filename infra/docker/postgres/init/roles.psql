@@ -3,6 +3,17 @@
 --   app_user: used by `app` and `worker`; never owns tables, never bypasses RLS.
 -- The bootstrap superuser (POSTGRES_USER) is for administration only; no service uses it.
 
+-- Passwords come from the environment (psql >= 15 \getenv), never from `-v`, so they do not
+-- appear in the process list (ps). Required env: MIGRATOR_PASSWORD, APP_USER_PASSWORD.
+-- If one is unset the variable stays undefined and the CREATE ROLE below fails to parse.
+\getenv migrator_pw MIGRATOR_PASSWORD
+\getenv app_pw APP_USER_PASSWORD
+SELECT (length(:'migrator_pw') = 0 OR length(:'app_pw') = 0) AS empty_pw \gset
+\if :empty_pw
+  \echo 'roles.psql: MIGRATOR_PASSWORD and APP_USER_PASSWORD must not be empty'
+  \quit
+\endif
+
 CREATE ROLE migrator LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE
   PASSWORD :'migrator_pw';
 CREATE ROLE app_user LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE
