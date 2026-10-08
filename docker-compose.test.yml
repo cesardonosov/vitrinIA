@@ -1,12 +1,12 @@
 # Isolated Postgres for integration tests (VIT-107). NEVER the development database:
-# separate project name, separate port (55432), data in tmpfs (gone on `down`).
+# separate project name, separate port (TEST_DB_PORT, default 55432), data in tmpfs (gone on `down`).
 # Same init scripts as development, so roles and grants are identical.
 #   pnpm test:db:up      start + wait healthy
 #   pnpm db:migrate:test apply migrations as migrator
 #   pnpm test:integration
 #   pnpm test:db:down
 
-name: vitrinia-test
+name: ${TEST_COMPOSE_PROJECT:-vitrinia-test}
 
 services:
   postgres-test:
@@ -18,7 +18,7 @@ services:
       MIGRATOR_PASSWORD: ${MIGRATOR_PASSWORD:?set MIGRATOR_PASSWORD}
       APP_USER_PASSWORD: ${APP_USER_PASSWORD:?set APP_USER_PASSWORD}
     ports:
-      - "127.0.0.1:55432:5432"
+      - "127.0.0.1:${TEST_DB_PORT:-55432}:5432"
     tmpfs:
       - /var/lib/postgresql/data
     volumes:
