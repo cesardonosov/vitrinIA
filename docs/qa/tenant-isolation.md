@@ -95,7 +95,7 @@ pnpm test:tenant-isolation   # vuelve a pasar
 
 ## CI (AC3)
 
-El job `integration` de `.github/workflows/ci.yml` (archivo protegido: lo edita DevOps, Security lo revisa) ya existe en este PR. Corre en cada PR contra el Postgres **efímero** del runner (service `postgres:16.15-alpine`), nunca contra una base compartida, con los roles creados por `infra/docker/postgres/init/roles.psql` y las migraciones aplicadas como `migrator`. Después de `pnpm test:integration` ejecuta los dos pasos del arnés (DevOps está quitando los `hashFiles` que hoy los condicionan, por eso se muestran sin ellos):
+El job `integration` de `.github/workflows/ci.yml` (archivo protegido: lo edita DevOps, Security lo revisa) ya existe en este PR. Corre en cada PR contra el Postgres **efímero** del runner (service `postgres:16.15-alpine`), nunca contra una base compartida, con los roles creados por `infra/docker/postgres/init/roles.psql` y las migraciones aplicadas como `migrator`. Después de `pnpm test:integration` ejecuta los dos pasos del arnés (sin condiciones `hashFiles`: si faltan los tests, el CI falla):
 
 ```yaml
 - name: Cross-tenant harness (VIT-109)
