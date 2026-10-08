@@ -95,7 +95,7 @@ pnpm test:tenant-isolation   # vuelve a pasar
 
 ## CI (AC3)
 
-El job va en `.github/workflows/ci.yml` (archivo protegido: lo edita DevOps en VIT-105, Security lo revisa). Debe correr en cada PR contra el Postgres **efímero** del runner (service `postgres:16.15-alpine`), nunca contra una base compartida, con los roles creados por `infra/docker/postgres/init/roles.psql` y las migraciones aplicadas como `migrator`, y después:
+El job `integration` de `.github/workflows/ci.yml` (archivo protegido: lo edita DevOps, Security lo revisa) ya existe en este PR. Corre en cada PR contra el Postgres **efímero** del runner (service `postgres:16.15-alpine`), nunca contra una base compartida, con los roles creados por `infra/docker/postgres/init/roles.psql` y las migraciones aplicadas como `migrator`. Después de `pnpm test:integration` ejecuta los dos pasos del arnés (DevOps está quitando los `hashFiles` que hoy los condicionan, por eso se muestran sin ellos):
 
 ```yaml
 - name: Cross-tenant harness (VIT-109)
@@ -110,10 +110,10 @@ El job va en `.github/workflows/ci.yml` (archivo protegido: lo edita DevOps en V
   run: pnpm test:tenant-isolation:mutations
 ```
 
-(`APP_PW` debe exportarse a `GITHUB_ENV` junto a `MIGRATOR_URL` en el paso que crea los roles; ambos enmascarados con `::add-mask::`.) Hasta que el job exista, VIT-109 no está en Done: la tercera capa de §8.1 "corre en CI" o no existe.
+`APP_PW` se exporta a `GITHUB_ENV` junto a `MIGRATOR_URL` en el paso que crea los roles; ambos se enmascaran con `::add-mask::`. Las credenciales de administrador viven solo en ese paso.
 
 ## Fuera de alcance y pendientes
 
 - Cruce a nivel caso de uso, endpoint, MCP y caché host→tienda: VIT-120 (Sprint 2). La matriz de esas capas se agrega a este documento cuando existan.
-- Roles con `BYPASSRLS`/`SUPERUSER`: lo verifica `infra/ci/rls-check.sh` con superusuario (VIT-105 AC6) y `tenancy.test.ts`; el arnés lo afirma indirectamente (`is_superuser = off`, dueño distinto de `app_user`).
+- Roles con `BYPASSRLS`/`SUPERUSER`: el arnés ya lo afirma directamente. `assertAppUser` consulta `pg_roles` para `current_user` en la misma conexión/transacción de cada chequeo y exige `{ u: "app_user", rolsuper: false, rolbypassrls: false }`; si alguien hace `ALTER ROLE app_user BYPASSRLS`, la suite falla con un mensaje explícito. `infra/ci/rls-check.sh` (VIT-105 AC6) y `tenancy.test.ts` lo siguen verificando por separado.
 - `app_user` puede reclamar hosts reservados (`app`, `www`, ...) en `domains` (hallazgo del security-review de VIT-107, issue #50): es regla de caso de uso (VIT-121), no de RLS, y VIT-109 no la pide; no se incluye aquí como `it.fails`.

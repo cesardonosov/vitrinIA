@@ -16,6 +16,7 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import pg from "pg";
+import { requireTestUrl } from "../test-url.ts";
 
 interface Mutation {
   readonly name: string;
@@ -141,24 +142,6 @@ const MUTATIONS: readonly Mutation[] = [
   },
 ];
 
-function requireLoopbackUrl(name: string): string {
-  const raw = process.env[name];
-  if (!raw)
-    throw new Error(`${name} is not set (see docs/qa/tenant-isolation.md)`);
-  const host = new URL(raw).hostname;
-  if (
-    !["localhost", "127.0.0.1", "::1", "[::1]", "postgres-test"].includes(host)
-  ) {
-    throw new Error(
-      `${name} must point to the local test database, got host ${host}`,
-    );
-  }
-  if (process.env.DATABASE_URL === raw) {
-    throw new Error(`${name} must not equal DATABASE_URL (development)`);
-  }
-  return raw;
-}
-
 const root = path.resolve(import.meta.dirname, "../../..");
 
 function runSuite(filter?: string): { status: number; output: string } {
@@ -181,7 +164,7 @@ function runSuite(filter?: string): { status: number; output: string } {
 
 async function main(): Promise<void> {
   const client = new pg.Client({
-    connectionString: requireLoopbackUrl("TEST_MIGRATOR_DATABASE_URL"),
+    connectionString: requireTestUrl("TEST_MIGRATOR_DATABASE_URL"),
   });
   await client.connect();
   const who = await client.query<{ u: string }>("select current_user as u");

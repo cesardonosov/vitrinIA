@@ -36,7 +36,11 @@ import { expectedRowsPerStore, seederFor } from "./seeders";
 const owner = openMigrator();
 const catalog = await loadCatalog(owner);
 
-let app: DatabaseHandle;
+let app: DatabaseHandle | undefined;
+function appDb(): DatabaseHandle["db"] {
+  if (!app) throw new Error("app_user pool not opened (beforeAll failed)");
+  return app.db;
+}
 let withStoreTx: ReturnType<typeof bindWithStoreTx>;
 let A: StoreId;
 let B: StoreId;
@@ -59,12 +63,20 @@ async function count(
   return (r.rows[0] as { n: number }).n;
 }
 
-/** G2: every cross-tenant assertion runs as app_user, never as the owner or a superuser. */
+/**
+ * G2: every cross-tenant assertion runs as app_user, never as the owner, a
+ * superuser or a BYPASSRLS role. Read from pg_roles for current_user, on the
+ * same connection/transaction as the checked query.
+ */
 async function assertAppUser(ex: Executor): Promise<void> {
   const r = await ex.execute(
-    sql`select current_user as u, current_setting('is_superuser') as s`,
+    sql`select current_user as u, r.rolsuper, r.rolbypassrls
+        from pg_roles r where r.rolname = current_user`,
   );
-  expect(r.rows[0]).toEqual({ u: "app_user", s: "off" });
+  expect(
+    r.rows[0],
+    "cross-tenant checks must run as app_user with rolsuper=false and rolbypassrls=false",
+  ).toEqual({ u: "app_user", rolsuper: false, rolbypassrls: false });
 }
 
 async function truncateTenantTables(): Promise<void> {
@@ -94,9 +106,13 @@ beforeAll(() => {
 });
 
 afterAll(async () => {
-  await truncateTenantTables();
-  await app.close();
-  await owner.close();
+  // Guarded: a failed beforeAll must not hide its error behind a TypeError here.
+  try {
+    await truncateTenantTables();
+  } finally {
+    await app?.close();
+    await owner.close();
+  }
 });
 
 beforeEach(async () => {
@@ -115,7 +131,7 @@ describe("harness honesty (C7/G2)", () => {
   });
 
   it("the app pool is app_user without superuser; the owner pool is migrator", async () => {
-    await assertAppUser(app.db);
+    await assertAppUser(appDb());
     const r = await owner.db.execute(sql`select current_user as u`);
     expect(r.rows[0]).toEqual({ u: "migrator" });
   });
@@ -223,7 +239,13 @@ describe.each(catalog.tables)("tenant table $qualified", (t) => {
           const total = await count(tx, t);
           const foreign = await count(tx, t, other);
           if (t.isPartition) {
-            expect(own, `${label}: own rows`).toBeGreaterThanOrEqual(0);
+            // A partition may legitimately hold none of the seeded rows (they are routed by
+            // the partition key); coverage of "own > 0" comes from the parent (exact count)
+            // and from the parent-vs-partitions sum below. `total === own` and
+            // `foreign === 0` still apply to the partition itself.
+            expect(own, `${label}: own rows`).toBeLessThanOrEqual(
+              expectedRowsPerStore(t),
+            );
           } else {
             expect(own, `${label}: own rows`).toBe(expectedRowsPerStore(t));
           }
@@ -255,6 +277,10 @@ describe.each(catalog.tables)("tenant table $qualified", (t) => {
         await withStoreTx(A, async (tx) => {
           let sum = 0;
           for (const p of parts) sum += await count(tx, p);
+          expect(
+            sum,
+            `${label}: at least one partition must hold own rows`,
+          ).toBeGreaterThan(0);
           expect(sum, `${label}: partitions vs parent`).toBe(
             await count(tx, t),
           );
@@ -263,10 +289,13 @@ describe.each(catalog.tables)("tenant table $qualified", (t) => {
     }
 
     it("without tenant context reads 0 rows (fail-closed)", async () => {
-      await assertAppUser(app.db);
-      expect(await count(app.db, t)).toBe(0);
-      const r = await app.db.execute(sql`select * from ${rel(t)}`);
-      expect(r.rows).toHaveLength(0);
+      // One transaction without app.store_id: the role check and the reads share a connection.
+      await appDb().transaction(async (tx) => {
+        await assertAppUser(tx);
+        expect(await count(tx, t)).toBe(0);
+        const r = await tx.execute(sql`select * from ${rel(t)}`);
+        expect(r.rows).toHaveLength(0);
+      });
     });
 
     if (can("UPDATE")) {
