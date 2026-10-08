@@ -15,6 +15,8 @@ services:
       POSTGRES_DB: vitrinia
       MIGRATOR_PASSWORD: ${MIGRATOR_PASSWORD:?set MIGRATOR_PASSWORD in .env.local}
       APP_USER_PASSWORD: ${APP_USER_PASSWORD:?set APP_USER_PASSWORD in .env.local}
+    # Early signal if migrator is used outside the migrate service.
+    command: ["postgres", "-c", "log_connections=on"]
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -85,7 +87,8 @@ services:
 
   # The ONLY service that uses the migrator role (table owner). One-off:
   #   docker compose --env-file .env.local --profile tools run --rm migrate
-  # drizzle-kit and its config arrive with VIT-107; until then this fails by design.
+  # Runs `drizzle-kit migrate` (drizzle.config.ts, drizzle/migrations) as migrator (VIT-107).
+  # Equivalent shortcut: pnpm db:migrate:compose
   migrate:
     profiles: [tools]
     build:

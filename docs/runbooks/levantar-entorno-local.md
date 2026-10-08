@@ -36,11 +36,14 @@ La imagen del `Dockerfile` es de desarrollo local, no la de producción.
 
 ## Roles de base de datos (ADR-0003)
 
-`infra/docker/postgres/init/01-roles.sh` y `.sql` crean, **solo con el volumen vacío**:
+`infra/docker/postgres/init/01-roles.sh` ejecuta `roles.psql` (extensión `.psql` a propósito: el entrypoint de Postgres ejecuta todo `*.sql` del directorio y lo correría dos veces, sin variables) y crea, **solo con el volumen vacío**:
 
 - `migrator`: dueño de la base y del esquema `public` (y de las tablas que cree VIT-107). Lo usa solo `migrate`. `NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB`.
 - `app_user`: lo usan `app` y `worker` (`DATABASE_URL`). `NOSUPERUSER NOBYPASSRLS NOCREATEROLE NOCREATEDB`, no es dueño de nada y no puede crear objetos. Los permisos sobre cada tabla los da la migración correspondiente.
+- `host_resolver`: `NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE`, sin contraseña. Dueño de `resolve_host()` (VIT-107). `migrator` es miembro con `INHERIT FALSE, SET TRUE`: puede asignarle la propiedad de la función pero no hereda sus permisos. Se crea aquí porque `migrator` no puede crear roles.
 - `vitrinia_admin`: superusuario de arranque del contenedor, solo administración. Ningún servicio lo usa.
+
+**`DATABASE_URL` fuera de Docker** (por ejemplo `pnpm dev` en tu máquina) es siempre la URL de `app_user` (`postgres://app_user:$APP_USER_PASSWORD@127.0.0.1:5432/vitrinia`), nunca la del superusuario ni la de `migrator`. Postgres corre con `log_connections=on`: una conexión inesperada de `migrator` fuera de `migrate` aparece en `docker compose logs postgres`.
 
 El `worker` placeholder se niega a arrancar si `DATABASE_URL` no usa `app_user`.
 
@@ -50,10 +53,10 @@ Verificar los roles:
 set -a; . ./.env.local; set +a
 docker compose --env-file .env.local exec -T postgres env PGPASSWORD=$POSTGRES_ADMIN_PASSWORD \
   psql -U vitrinia_admin -d vitrinia -c \
-  "select rolname, rolsuper, rolbypassrls, rolcreaterole from pg_roles where rolname in ('app_user','migrator')"
+  "select rolname, rolsuper, rolbypassrls, rolcreaterole from pg_roles where rolname in ('app_user','migrator','host_resolver')"
 ```
 
-Resultado esperado: ambos con `f` en las tres columnas.
+Resultado esperado: los tres con `f` en `rolsuper`, `rolbypassrls` y `rolcreaterole`; `host_resolver` además con `rolcanlogin = f` (agrega esa columna al select si quieres verlo).
 
 ## Migraciones
 
@@ -61,7 +64,20 @@ Resultado esperado: ambos con `f` en las tres columnas.
 docker compose --env-file .env.local --profile tools run --rm migrate
 ```
 
-Hoy falla a propósito: `drizzle-kit` y su configuración llegan con VIT-107.
+Aplica `drizzle/migrations` con `drizzle-kit` como `migrator` (atajo: `pnpm db:migrate:compose`). La imagen `migrate` se construye con `pnpm install`, por lo que necesita acceso a npm al hacer `build`.
+
+### Postgres de test aislada (integración)
+
+```bash
+# variables de test (solo en tu shell; nunca en el repo)
+export POSTGRES_ADMIN_PASSWORD=... MIGRATOR_PASSWORD=... APP_USER_PASSWORD=...   # hex
+export TEST_MIGRATOR_DATABASE_URL=postgres://migrator:$MIGRATOR_PASSWORD@127.0.0.1:55432/vitrinia
+export TEST_DATABASE_URL=postgres://app_user:$APP_USER_PASSWORD@127.0.0.1:55432/vitrinia
+pnpm test:db:up && pnpm db:migrate:test && pnpm test:integration
+pnpm test:db:down   # borra el contenedor y sus datos (tmpfs)
+```
+
+Usa el puerto 55432 y un proyecto compose distinto (`vitrinia-test`): no toca la base de desarrollo. Los tests leen solo `TEST_*` y rechazan hosts no locales.
 
 ## Operación diaria
 
@@ -73,7 +89,7 @@ docker compose --env-file .env.local logs -f app
 
 ## Reiniciar la base desde cero (destructivo)
 
-Los scripts de `init/` solo corren con volumen vacío. Si cambias `01-roles.sql` o una contraseña de rol, hay que recrear el volumen, lo que **borra todos los datos locales**. No es un paso de rutina: hazlo solo si aceptas perder la base local, y avisa antes si hay datos que importen.
+Los scripts de `init/` solo corren con volumen vacío. Si cambias `roles.psql` o una contraseña de rol, hay que recrear el volumen, lo que **borra todos los datos locales**. No es un paso de rutina: hazlo solo si aceptas perder la base local, y avisa antes si hay datos que importen.
 
 ```bash
 docker compose --env-file .env.local down -v
