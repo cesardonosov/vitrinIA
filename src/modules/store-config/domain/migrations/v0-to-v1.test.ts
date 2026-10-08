@@ -46,6 +46,18 @@ describe("migrateV0ToV1", () => {
     });
   });
 
+  it("lowercases primaryColor (v1 accepts only lowercase hex)", () => {
+    const v1 = migrateV0ToV1({
+      schemaVersion: 0,
+      name: "x",
+      whatsapp: "+56912345678",
+      primaryColor: "#7C2D12",
+    });
+    expect((v1.theme as { colors: { primary: string } }).colors.primary).toBe(
+      "#7c2d12",
+    );
+  });
+
   it("drops the v0 paymentLink (the allowlist decides in v1)", () => {
     const v1 = migrateV0ToV1({
       schemaVersion: 0,

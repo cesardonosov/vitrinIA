@@ -139,6 +139,12 @@ export interface StorePages {
 //
 // Product switches. NOT security controls (ADR-0004 §9): no access, isolation,
 // validation or CSP decision reads a flag, and a flag off never relaxes a check.
+//
+// Adding a flag: every key below is REQUIRED by the schema, so a new entry in
+// this list makes every persisted config invalid. Either declare the new flag
+// optional (with its default resolved in code) or bump
+// STORE_CONFIG_SCHEMA_VERSION with a migration that fills it. Never just
+// append here.
 
 export const FEATURE_FLAGS = [
   "showPrices",

@@ -53,15 +53,17 @@ export const migrateV0ToV1: Migration = (
   // v0 `paymentLink` is intentionally dropped: v1 only accepts hosts from the
   // allowlist and the list is empty until E1. The vendor re-enters it.
 
+  // v0 accepted `#7C2D12`; v1 only accepts lowercase hex (ADR-0004 §1), so
+  // the migration normalises instead of making every old config invalid.
+  const primary = asString(v0.primaryColor)?.toLowerCase();
+
   return {
     schemaVersion: 1,
     identity,
     theme: {
       colors: {
         ...V0_DEFAULT_COLORS,
-        ...(asString(v0.primaryColor) === undefined
-          ? {}
-          : { primary: asString(v0.primaryColor) }),
+        ...(primary === undefined ? {} : { primary }),
       },
       font: "system-sans",
       radius: "md",

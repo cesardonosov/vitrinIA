@@ -1,13 +1,14 @@
 # Módulo store-config
 
-Estado: Sprint 1 (VIT-107 + VIT-110). Contiene las tablas raíz de tenancy `stores` y `domains` (VIT-107) y el contrato del **Store Config v1** validado con Zod y versionado (VIT-110, ADR-0004 v2). La persistencia del config en `jsonb` y sus casos de uso de escritura (con `audit_log`) llegan en Sprint 2. Contrato de seguridad: [`docs/security/threat-models/tenancy.md`](../../security/threat-models/tenancy.md) §5 (C1 a C15) y §9, ADR-0003 y ADR-0004.
+Estado: Sprint 1 (VIT-107 + VIT-110). Contiene las tablas raíz de tenancy `stores` y `domains` (VIT-107) y el contrato del **Store Config v1** validado con Zod y versionado (VIT-110, ADR-0004 v3). La persistencia del config en `jsonb` y sus casos de uso de escritura (con `audit_log`) llegan en Sprint 2. Contrato de seguridad: [`docs/security/threat-models/tenancy.md`](../../security/threat-models/tenancy.md) §5 (C1 a C15) y §9, ADR-0003 y ADR-0004.
 
 ## Archivos
 
 | Ruta | Qué es |
 |---|---|
 | `src/modules/store-config/domain/store-config.ts` | Tipos puros del Store Config v1, `STORE_CONFIG_SCHEMA_VERSION`, lista cerrada de secciones y de feature flags |
-| `src/modules/store-config/domain/{color,fonts,phone,text}.ts` | Reglas puras: hex `#rrggbb` y contraste AA, fuentes y radios cerrados con su stack CSS, E.164 móvil chileno, texto plano y límites por campo |
+| `src/modules/store-config/domain/{color,fonts,phone,text}.ts` | Reglas puras: hex `#rrggbb` y contraste AA (tres pares), fuentes y radios cerrados con su stack CSS, E.164 móvil chileno (+ `PLACEHOLDER_WHATSAPP`), texto plano (`isPlainText`, `isBlankText`) y límites por campo |
+| `src/modules/store-config/domain/deep-freeze.ts` | `deepFreeze` para presets (congelamiento profundo) |
 | `src/modules/store-config/domain/slug.ts` + `reserved-slugs.ts` | `normalizeSlug` / `validateSlug` y lista reservada (ADR-0004 §8) |
 | `src/modules/store-config/domain/url-allowlist.ts` | Allowlist de esquema y host **por campo URL** (ADR-0004 §3) |
 | `src/modules/store-config/domain/migrations/` | Cadena `MIGRATIONS` (`vN -> vN+1`, puras) y `migrateToCurrent` |
@@ -89,6 +90,7 @@ flowchart LR
 - `domain/` y `application/` no importan paquetes (ADR-0008: `domain-is-pure`, `application-only-domain-and-kernel`). Por eso **el esquema Zod es un adaptador de infraestructura** del puerto `StoreConfigValidator`, no un archivo de dominio. Cada regla que Zod aplica delega en una función pura del dominio (`isPlainText`, `meetsAaContrast`, `checkUrlForField`, `CHILEAN_MOBILE_E164_PATTERN`, `FONT_IDS`...), así que el contrato tiene una sola fuente de verdad y se puede testear sin Zod.
 - El tipo inferido del esquema se comprueba en compilación contra `StoreConfigV1` del dominio (`store-config-v1.schema.ts`, al final): si divergen, falla `pnpm typecheck`.
 - `parseStoreConfig` es la **única entrada** para datos no confiables (fila `jsonb`, seed, formulario, parche MCP): `migrateToCurrent` (puro, en memoria) y luego `validator.validate`. Lectura y escritura pasan por el mismo camino ("dos validaciones por diseño", ADR-0004).
+- **`parseStoreConfig` es estricto; la lectura tolerante es de `storefront`.** Cualquier sección, campo o clave inválida hace fallar el parse completo (`Result.err` con todos los `issues`): no existe "omitir lo que no valida" en este módulo. La **lectura tolerante por sección** (omitir la sección que no valida contra el registro de componentes, registrar `store_id`, `page`, índice y `type`, renderizar el resto) la implementa el módulo `storefront` en el Sprint 2 sobre configs ya persistidas (ADR-0004 v3 §2). Hasta entonces no hay lectura tolerante: lo que no pasa `parseStoreConfig` no se persiste y no llega a la vitrina.
 - La vitrina obtiene el validador cableado desde `src/infra/container.ts` (lo crea el primer caso de uso que persista, Sprint 2); `presentation/` nunca importa `infrastructure/`.
 
 ### Forma del contrato
@@ -96,24 +98,25 @@ flowchart LR
 | Campo | Tipo | Regla |
 |---|---|---|
 | `schemaVersion` | literal `1` | Otro valor se rechaza; los antiguos se migran antes |
-| `identity.name` / `tagline` | texto plano ≤ 80 / ≤ 160 | Sin control chars, no en blanco. `<script>` son caracteres, React escapa |
+| `identity.name` / `tagline` | texto plano ≤ 80 / ≤ 160 | `isPlainText`: rechaza `\p{Cc}` salvo `\t`/`\n` (incluye C1 como NEL), todo `\p{Cf}` (RLO, ZWSP, BOM, soft hyphen, tags; U+200D ZWJ también, hasta que el Designer pida `ALLOW_ZERO_WIDTH_JOINER`), `\p{Zl}`/`\p{Zp}`, noncharacters y strings mal formados (`isWellFormed()`). `isBlankText`: vacío tras quitar `\p{Cf}`, `\p{Z}` y espacios. `<script>` son caracteres, React escapa |
 | `identity.logoImageId` | UUID v7 (`ImageStorage`) | Nunca una URL |
-| `theme.colors.{primary,background,text,accent?}` | `#rrggbb` en minúsculas | `text` sobre `background` ≥ 4.5:1 (AA). Se emiten como `--color-*` |
+| `theme.colors.{primary,background,text,onPrimary?,accent?}` | `#rrggbb` en minúsculas | Tres pares WCAG 2.x: `text`/`background` ≥ 4.5:1, `primary`/`background` ≥ 3:1 (SC 1.4.11), `onPrimary`/`primary` ≥ 4.5:1. Si `onPrimary` falta, el validador comprueba `DEFAULT_ON_PRIMARY_COLOR` (`#ffffff`) y la vitrina usa ese mismo valor; el validador **no** lo inserta (sin `.transform()`). Se emiten como `--color-*` |
 | `theme.font` / `theme.radius` | enum `FONT_IDS` / `RADIUS_IDS` | El valor CSS sale de `FONT_STACKS` / `RADIUS_VALUES` en código, nunca del config |
-| `contact.whatsapp` | `+569XXXXXXXX` | La vitrina construye `https://wa.me/<dígitos>`; el host es fijo |
-| `contact.paymentLink` | opcional; `https:` + host de la allowlist | **La allowlist de hosts está vacía: espera la decisión E1 de Cesar** (STATUS.md "Esperando a Cesar" #1). Hoy cualquier valor se rechaza con `UrlNotAllowed(reason: "host")` y el campo solo puede estar ausente |
+| `contact.whatsapp` | `+569XXXXXXXX` | La vitrina construye `https://wa.me/<dígitos>`; el host es fijo. `PLACEHOLDER_WHATSAPP` (`+56900000000`) es el número **ficticio** de presets y fixtures: válido en forma para que el preset parsee, nunca se persiste como contacto real (`isPlaceholderWhatsApp` para que seed/onboarding lo afirmen) |
+| `contact.paymentLink` | opcional; `https:` + host de la allowlist; **canónico** | `value === new URL(value).href` o `UrlNotAllowed(reason: "not-canonical")`: mayúsculas, `:443`, `%2e`, hosts fullwidth/Unicode, controles, comillas y `<>` se rechazan; el productor serializa, el validador no normaliza. **La allowlist de hosts está vacía: espera la decisión E1 de Cesar** (STATUS.md "Esperando a Cesar" #1). Hoy cualquier valor se rechaza y el campo solo puede estar ausente |
 | `pages.home.sections[]` | ≤ 7 de `hero` · `product-grid` · `text` · `whatsapp-cta` | Unión discriminada por `type`; `props` estricto por tipo. Solo `home` en v1; otras páginas se agregan sin migración |
-| `features.*` | boolean, claves cerradas (`showPrices`, `showStock`, `whatsappCheckout`, `paymentLinkCheckout`, `search`) | **No son controles de seguridad** (ADR-0004 §9): ninguna validación, aislamiento ni CSP lee una flag |
+| `features.*` | boolean, claves cerradas (`showPrices`, `showStock`, `whatsappCheckout`, `paymentLinkCheckout`, `search`) | **No son controles de seguridad** (ADR-0004 §9): ninguna validación, aislamiento ni CSP lee una flag. Todas son **obligatorias**: una flag nueva se declara opcional (default resuelto en código) **o** sube `schemaVersion` con migración que la rellene; nunca se agrega a `FEATURE_FLAGS` sin una de las dos |
 
-Todos los objetos son `z.strictObject`: una clave desconocida (incluidas `html`, `css`, `style`, `className`) rechaza la escritura. No hay `z.any`, `z.unknown`, `z.record` ni `.transform()`: lo que entra es lo que se guarda.
+Todos los objetos son `z.strictObject`: una clave desconocida (incluidas `html`, `css`, `style`, `className`) rechaza la escritura. No hay `z.any`, `z.unknown`, `z.record` ni `.transform()`: lo que entra es lo que se guarda. Los `issues` nunca contienen el valor rechazado ni los nombres de claves desconocidas (`unrecognized_keys` recibe un mensaje fijo y la ruta del objeto): ambos son controlados por el atacante y terminarían en logs.
 
 ### Slug
 
-El slug vive en `stores.slug` (VIT-107), no dentro del `jsonb`; las reglas sí viven aquí. `normalizeSlug("Mi Tienda Ñandú")` → `mi-tienda-nandu` es lo que usan el onboarding y el MCP sobre texto libre; `validateSlug` exige la forma canónica (`[a-z0-9]` con guiones internos simples, 3–40, sin `xn--`, no reservado) y devuelve el candidato normalizado en el error. Lista reservada: `reserved-slugs.ts` (plataforma, auth/infra, marcas y pagos, ofensivas). Renombrar con tombstone y 301 es de VIT-121.
+El slug vive en `stores.slug` (VIT-107), no dentro del `jsonb`; las reglas sí viven aquí. `normalizeSlug("Mi Tienda Ñandú")` → `mi-tienda-nandu` es lo que usan el onboarding y el MCP sobre texto libre (NFKC antes de NFD: `ａｐｐ` o `Ⓐdmin` caen en la lista reservada en vez de pasar como "nada sobrevive"); `validateSlug` exige la forma canónica (`[a-z0-9]` con guiones internos simples, 3–40, sin `xn--`, no reservado) y devuelve el candidato normalizado en el error. Lista reservada: `reserved-slugs.ts` (plataforma, auth/infra, marcas y pagos, ofensivas). Renombrar con tombstone y 301 es de VIT-121.
 
 ### Versionado
 
-- `STORE_CONFIG_SCHEMA_VERSION = 1`. v0 es la forma plana del prototipo de Sprint 0 (`tests/fixtures/store-config/v0/`); existe para ejercitar la cadena desde el primer día.
+- `STORE_CONFIG_SCHEMA_VERSION = 1`. v0 es la forma plana del prototipo de Sprint 0 (`tests/fixtures/store-config/v0/`); existe para ejercitar la cadena desde el primer día. `migrateV0ToV1` pasa `primaryColor` a minúsculas (v1 solo acepta hex en minúsculas) y descarta el `paymentLink` libre.
+- `ROPA_PRESET` está congelado en profundidad (`deepFreeze`): ningún caso de uso ni test puede mutar el estado compartido por una referencia anidada.
 - Cambio incompatible: subir la constante, agregar `migrations/vN-to-vN+1.ts` (pura, total, nunca lanza), registrarla en `MIGRATIONS`, crear `tests/fixtures/store-config/vN+1/` y regenerar el JSON Schema. `fixtures.test.ts` falla si falta un eslabón o un fixture.
 - `migrateToCurrent` falla cerrado: sin `schemaVersion` entero, versión más nueva que el build, o hueco en la cadena → `UnsupportedSchemaVersion`.
 - El job del worker que persiste configs migradas (ADR-0004 §4) y la auditoría de escritura (§7) son de Sprint 2.

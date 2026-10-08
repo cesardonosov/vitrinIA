@@ -9,6 +9,19 @@
 
 export const CHILEAN_MOBILE_E164_PATTERN = /^\+569\d{8}$/;
 
+/**
+ * Fictitious number used by presets and fixtures, by convention. It matches
+ * the pattern only so a preset is a valid Store Config; it is not meant to
+ * reach anyone and nothing in production may persist it as a real contact.
+ * The onboarding form always replaces it, and `isPlaceholderWhatsApp` lets a
+ * seed or use case assert that before writing.
+ */
+export const PLACEHOLDER_WHATSAPP = "+56900000000";
+
+export function isPlaceholderWhatsApp(value: string): boolean {
+  return value === PLACEHOLDER_WHATSAPP;
+}
+
 export function isChileanMobileE164(value: string): boolean {
   return CHILEAN_MOBILE_E164_PATTERN.test(value);
 }

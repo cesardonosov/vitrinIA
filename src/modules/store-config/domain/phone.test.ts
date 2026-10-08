@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { isChileanMobileE164, toWhatsAppDigits } from "./phone";
+import {
+  isChileanMobileE164,
+  isPlaceholderWhatsApp,
+  PLACEHOLDER_WHATSAPP,
+  toWhatsAppDigits,
+} from "./phone";
+
+describe("PLACEHOLDER_WHATSAPP", () => {
+  it("is shape-valid and recognised only by exact match", () => {
+    expect(isChileanMobileE164(PLACEHOLDER_WHATSAPP)).toBe(true);
+    expect(isPlaceholderWhatsApp(PLACEHOLDER_WHATSAPP)).toBe(true);
+    expect(isPlaceholderWhatsApp("+56912345678")).toBe(false);
+  });
+});
 
 describe("isChileanMobileE164", () => {
   it.each(["+56912345678", "+56987654321"])("accepts %s", (phone) => {

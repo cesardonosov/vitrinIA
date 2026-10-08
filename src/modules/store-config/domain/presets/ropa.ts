@@ -1,13 +1,17 @@
+import { deepFreeze } from "../deep-freeze";
+import { PLACEHOLDER_WHATSAPP } from "../phone";
 import { DEFAULT_FEATURES, type StoreConfigV1 } from "../store-config";
 
 /**
  * Preset "ropa" (first vertical, STATUS.md decision #10): a valid Store Config
  * v1 a new clothing store starts from. Texts in es-CL with clear placeholders,
- * never lorem ipsum. Only system fonts and AA-contrast colours.
+ * never lorem ipsum. Only system fonts and AA-contrast colours (all three
+ * pairs of ADR-0004 §3, `onPrimary` set explicitly).
  *
  * The Designer owns the visual choices (skill `create-preset`); this file is
- * the typed contract they fill. `whatsapp` is a placeholder the onboarding
- * form always replaces.
+ * the typed contract they fill. `contact.whatsapp` is `PLACEHOLDER_WHATSAPP`,
+ * a fictitious number (see `phone.ts`) that the onboarding form always
+ * replaces; a seed must never persist it as a real store contact.
  */
 const ropa: StoreConfigV1 = {
   schemaVersion: 1,
@@ -27,7 +31,7 @@ const ropa: StoreConfigV1 = {
     radius: "md",
   },
   contact: {
-    whatsapp: "+56900000000",
+    whatsapp: PLACEHOLDER_WHATSAPP,
   },
   pages: {
     home: {
@@ -67,4 +71,4 @@ const ropa: StoreConfigV1 = {
   features: { ...DEFAULT_FEATURES, showStock: true },
 };
 
-export const ROPA_PRESET: StoreConfigV1 = Object.freeze(ropa);
+export const ROPA_PRESET: StoreConfigV1 = deepFreeze(ropa);
