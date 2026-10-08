@@ -1,3 +1,6 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve as resolvePath } from "node:path";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { DatabaseHandle } from "@/infra/db/client";
@@ -287,7 +290,7 @@ describe("AC3 and C5: cross-tenant access from the database", () => {
     await expectPgError(
       withStoreTx(A.id, (tx) =>
         tx.insert(stores).values({
-          id: B.id === A.id ? uuidv7() : newStoreId(),
+          id: newStoreId(),
           slug: "evil",
           name: "e",
         }),
@@ -474,6 +477,13 @@ describe("AC6 and C8/G4: resolve_host", () => {
     expect(await resolve(host)).toBeNull();
   });
 
+  it("does not let the Kelvin sign (U+212A) alias an ASCII k (ASCII allow-list before lower())", async () => {
+    // Control: the real ASCII host resolves, so a NULL below is due to the allow-list.
+    const k = await seedStore(app, "tienda-k");
+    expect(await resolve(k.host)).toBe(k.id);
+    expect(await resolve("tienda-\u212A.vitrinia.cl")).toBeNull();
+  });
+
   it("is a bounded SECURITY DEFINER owned by host_resolver (definition review)", async () => {
     const [f] = await rows<{
       owner: string;
@@ -641,11 +651,21 @@ describe("AC7: ids, timestamps, version", () => {
 });
 
 describe("AC8: migration applied and recorded", () => {
-  it("drizzle recorded the migration applied by migrator", async () => {
-    const r = await rows<{ n: number }>(
+  it("drizzle recorded migration 0000_tenancy_base (by sha256 of its file)", async () => {
+    const dir = resolvePath(process.cwd(), "drizzle/migrations");
+    const journal = JSON.parse(
+      readFileSync(resolvePath(dir, "meta/_journal.json"), "utf8"),
+    ) as { entries: { tag: string; when: number }[] };
+    const first = journal.entries[0];
+    expect(first?.tag).toBe("0000_tenancy_base");
+    const hash = createHash("sha256")
+      .update(readFileSync(resolvePath(dir, "0000_tenancy_base.sql"), "utf8"))
+      .digest("hex");
+    const r = await rows<{ hash: string; created_at: string }>(
       owner,
-      sql`select count(*)::int as n from drizzle.__drizzle_migrations`,
+      sql`select hash, created_at::text from drizzle.__drizzle_migrations order by id`,
     );
-    expect(r[0]?.n).toBeGreaterThanOrEqual(1);
+    expect(r[0]?.hash).toBe(hash);
+    expect(Number(r[0]?.created_at)).toBe(first?.when);
   });
 });

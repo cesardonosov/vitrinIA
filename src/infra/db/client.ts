@@ -27,7 +27,11 @@ export function createDatabase(options: DatabaseOptions): DatabaseHandle {
     max: options.max ?? 10,
   });
   // An idle client error must not crash the process; the pool discards that client.
-  pool.on("error", () => {});
+  // Log only the error code: never the message (may embed the URL) nor any user data.
+  // TODO(VIT-126): replace console.error with the pino logger once it exists.
+  pool.on("error", (err: Error & { code?: string }) => {
+    console.error(`pg pool idle client error (code=${err.code ?? "unknown"})`);
+  });
   const db = drizzle({ client: pool });
   return { db, pool, close: () => pool.end() };
 }

@@ -81,7 +81,7 @@ pnpm test:db:up && pnpm db:migrate:test && pnpm test:integration
 pnpm test:db:down   # borra el contenedor y sus datos (tmpfs)
 ```
 
-Usa el puerto 55432 y un proyecto compose distinto (`vitrinia-test`): no toca la base de desarrollo. Los tests leen solo `TEST_*` y rechazan hosts no locales.
+Por defecto usa el puerto 55432 y el proyecto compose `vitrinia-test`. Si otro worktree ya los ocupa, cambia ambos: `export TEST_DB_PORT=55433 TEST_COMPOSE_PROJECT=vitrinia-test-b` (y usa ese puerto en las URLs `TEST_*`). No toca la base de desarrollo. Los tests leen solo `TEST_*` y rechazan hosts no locales.
 
 ## Operación diaria
 
