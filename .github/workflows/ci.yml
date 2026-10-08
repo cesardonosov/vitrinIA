@@ -102,9 +102,9 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Self-test of the TODO check
+      - name: Self-test of the marker check
         run: bash infra/ci/test-check-todos.sh
-      - name: Only TODO(VIT-xxx) referencing an open issue
+      - name: Markers must reference an open VIT issue
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -204,7 +204,7 @@ jobs:
           echo "::add-mask::$MIGRATOR_PW"
           echo "::add-mask::$APP_PW"
           psql -v ON_ERROR_STOP=1 -v migrator_pw="$MIGRATOR_PW" -v app_pw="$APP_PW" \
-            -f infra/docker/postgres/init/01-roles.sql
+            -f infra/docker/postgres/init/roles.psql
           echo "MIGRATOR_URL=postgresql://migrator:${MIGRATOR_PW}@127.0.0.1:5432/vitrinia" >> "$GITHUB_ENV"
       - uses: ./.github/actions/setup
         if: hashFiles('drizzle/migrations/**') != ''

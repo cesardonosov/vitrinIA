@@ -41,18 +41,18 @@ Todas son `ERROR` y bloquean. Cada una tiene fixture positivo y negativo en `.se
 
 `infra/ci/check-rls.sql` falla nombrando al culpable si:
 
-- falta `app_user` o `migrator` (para que el chequeo no pase en vacío);
+- falta `app_user`, `migrator` o `host_resolver` (para que el chequeo no pase en vacío), o `host_resolver` puede iniciar sesión o tiene `CREATEROLE`/`CREATEDB`;
 - `app_user`, `migrator` o `host_resolver` tienen `rolsuper` o `rolbypassrls`;
 - `app_user` tiene `CREATEROLE`/`CREATEDB`, es dueño de alguna relación o es miembro de `pg_read_all_data`, `pg_write_all_data` u otros roles de servidor;
 - una tabla o partición (`relkind IN ('r','p')`) con columna `store_id`, o la tabla `stores`, no tiene `relrowsecurity` y `relforcerowsecurity`, o no tiene ninguna política.
 
-`infra/ci/rls-check.sh` primero corre el chequeo real y después seis autopruebas que deben fallar (tabla sin RLS, RLS sin FORCE, `bypassrls` en ambos roles, superusuario, `app_user` dueño de tabla). Hoy no hay tablas, así que el chequeo real pasa casi en vacío; las autopruebas demuestran que sabe fallar. Cuando exista `drizzle/migrations/`, el job aplica las migraciones como `migrator` con `pnpm db:migrate` (script que debe aportar VIT-107, lee `DATABASE_URL`).
+`infra/ci/rls-check.sh` primero corre el chequeo real y después ocho autopruebas que deben fallar (tabla sin RLS, RLS sin FORCE, `bypassrls` en `app_user`, `migrator` y `host_resolver`, `host_resolver` con LOGIN, superusuario, `app_user` dueño de tabla). Hoy no hay tablas, así que el chequeo real pasa casi en vacío; las autopruebas demuestran que sabe fallar. Cuando exista `drizzle/migrations/`, el job aplica las migraciones como `migrator` con `pnpm db:migrate` (script que debe aportar VIT-107, lee `DATABASE_URL`).
 
 Local, contra un Postgres desechable (nunca el de desarrollo):
 
 ```bash
 docker run --rm -d --name pgci -e POSTGRES_PASSWORD=x -e POSTGRES_DB=vitrinia -p 127.0.0.1:55432:5432 postgres:16.15-alpine
-psql postgresql://postgres:x@127.0.0.1:55432/vitrinia -v migrator_pw=a -v app_pw=b -f infra/docker/postgres/init/01-roles.sql
+psql postgresql://postgres:x@127.0.0.1:55432/vitrinia -v migrator_pw=a -v app_pw=b -f infra/docker/postgres/init/roles.psql
 ADMIN_DATABASE_URL=postgresql://postgres:x@127.0.0.1:55432/vitrinia bash infra/ci/rls-check.sh
 docker rm -f pgci
 ```

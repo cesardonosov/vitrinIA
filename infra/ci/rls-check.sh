@@ -27,6 +27,8 @@ expect_fail "table with store_id, RLS enabled but not forced" \
   "drop table public.selftest_t;"
 expect_fail "app_user with BYPASSRLS" "alter role app_user bypassrls;" "alter role app_user nobypassrls;"
 expect_fail "migrator with BYPASSRLS" "alter role migrator bypassrls;" "alter role migrator nobypassrls;"
+expect_fail "host_resolver with LOGIN" "alter role host_resolver login;" "alter role host_resolver nologin;"
+expect_fail "host_resolver with BYPASSRLS" "alter role host_resolver bypassrls;" "alter role host_resolver nobypassrls;"
 expect_fail "app_user as superuser" "alter role app_user superuser;" "alter role app_user nosuperuser;"
 expect_fail "app_user owning a table" \
   "create table public.selftest_o (id int); alter table public.selftest_o owner to app_user;" \

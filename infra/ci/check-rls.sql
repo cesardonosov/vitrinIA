@@ -7,7 +7,7 @@ DECLARE
   r_name text;
 BEGIN
   -- 1. The application roles must exist (otherwise the role checks pass vacuously).
-  FOREACH r_name IN ARRAY ARRAY['app_user', 'migrator'] LOOP
+  FOREACH r_name IN ARRAY ARRAY['app_user', 'migrator', 'host_resolver'] LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r_name) THEN
       RAISE EXCEPTION 'RLS check: required role % does not exist', r_name;
     END IF;
@@ -20,6 +20,11 @@ BEGIN
     AND (rolsuper OR rolbypassrls);
   IF offenders IS NOT NULL THEN
     RAISE EXCEPTION 'RLS check: roles with rolsuper/rolbypassrls: %', offenders;
+  END IF;
+
+  -- 2b. host_resolver owns the SECURITY DEFINER resolver: it must never be able to log in.
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'host_resolver' AND (rolcanlogin OR rolcreaterole OR rolcreatedb)) THEN
+    RAISE EXCEPTION 'RLS check: host_resolver must be NOLOGIN NOCREATEROLE NOCREATEDB';
   END IF;
 
   -- 3. app_user: no CREATEROLE/CREATEDB, owns nothing, no blanket data roles.
