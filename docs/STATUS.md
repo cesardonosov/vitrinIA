@@ -18,6 +18,13 @@ Mergeados en `main` el 2026-10-08 con el OK de Cesar: VIT-101 (#32), VIT-106 (#3
 - VIT-114 Verificación de la demo (qa) — pendiente
 - VIT-116 Deny de secretos para agentes (architect) — ADR-0009 propuesto, espera a Cesar
 
+## Seguimientos por crear como issue
+La creación de estos issues desde la sesión fue denegada por un permiso; quedan aquí para no perderlos.
+- Builder (P2): los tests de integración nunca deben poder apuntar a la BD de desarrollo; exigir un marcador de BD de test antes de truncar (review de Security sobre #56).
+- Designer + Security (P3): decidir si los textos de la tienda admiten emojis con ZWJ, solo entre emojis (#66).
+- Builder (P2): cargar Gabarito y Albert Sans en el portal con `next/font` y aplicar `deriveTheme` al guardar el tema; depende de #68 (#65).
+- DevOps + Security (P3): agregar `build-storybook` y axe de las stories al CI (#65).
+
 ## Bloqueos
 - ninguno
 
