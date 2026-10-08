@@ -71,12 +71,21 @@ alter table public.selftest_t_p1 enable row level security; alter table public.s
 create policy p on public.selftest_t for all to app_user using ($GOOD_EXPR) with check ($GOOD_EXPR);"
 expect_fail "partition with direct app_user privilege and no policy of its own" \
   "$PART_RLS grant select on public.selftest_t_p1 to app_user;" "$DROP_T"
+expect_fail "materialized view over a tenant table readable by app_user" \
+  "$T_RLS create policy p on public.selftest_t for all to app_user using ($GOOD_EXPR) with check ($GOOD_EXPR); create materialized view public.ev_mv as select * from public.selftest_t; grant select on public.ev_mv to app_user;" \
+  "drop materialized view public.ev_mv; $DROP_T"
+expect_fail "materialized view that aliases away store_id but depends on a tenant table" \
+  "$T_RLS create policy p on public.selftest_t for all to app_user using ($GOOD_EXPR) with check ($GOOD_EXPR); create materialized view public.ev_mv as select count(*) as n from public.selftest_t; grant select on public.ev_mv to app_user;" \
+  "drop materialized view public.ev_mv; $DROP_T"
 
 echo "== self-tests (must pass) =="
 expect_pass "FOR ALL tenant policy with USING and WITH CHECK" \
   "$T_RLS create policy p on public.selftest_t for all to app_user using ($GOOD_EXPR) with check ($GOOD_EXPR);" "$DROP_T"
 expect_pass "split INSERT and UPDATE tenant policies" \
   "$T_RLS create policy pi on public.selftest_t for insert to app_user with check ($GOOD_EXPR); create policy pu on public.selftest_t for update to app_user using ($GOOD_EXPR) with check ($GOOD_EXPR);" "$DROP_T"
+expect_pass "materialized view over a tenant table without app_user privilege" \
+  "$T_RLS create policy p on public.selftest_t for all to app_user using ($GOOD_EXPR) with check ($GOOD_EXPR); create materialized view public.ev_mv as select * from public.selftest_t;" \
+  "drop materialized view public.ev_mv; $DROP_T"
 expect_pass "partition without direct app_user privilege (parent policy, access through the parent)" \
   "$PART_RLS" "$DROP_T"
 expect_pass "partition with direct privilege and its own tenant policy" \
