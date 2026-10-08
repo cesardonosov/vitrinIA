@@ -13,20 +13,50 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "biome check .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "prepare": "lefthook install",
+    "dev:up": "docker compose --env-file .env.local up -d --build --wait",
+    "dev:down": "docker compose --env-file .env.local down",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:migrate:test": "DATABASE_URL=\"$TEST_MIGRATOR_DATABASE_URL\" drizzle-kit migrate",
+    "db:migrate:compose": "docker compose --env-file .env.local --profile tools run --rm migrate",
+    "test:db:up": "docker compose -f docker-compose.test.yml up -d --wait",
+    "test:db:down": "docker compose -f docker-compose.test.yml down -v",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
+    "semgrep:test": "semgrep --metrics=off --test .semgrep/rules",
+    "todo-check": "TODO_CHECK_OFFLINE=1 bash infra/ci/check-todos.sh",
+    "commitlint": "commitlint",
+    "arch": "depcruise --config .dependency-cruiser.cjs src",
+    "arch:fixtures": "cd tests/arch-fixtures && depcruise --config ../../.dependency-cruiser.cjs src",
+    "arch:graph": "depcruise --config .dependency-cruiser.cjs --include-only \"^src/\" --output-type mermaid src > docs/arquitectura/dependencias.mmd"
   },
   "dependencies": {
+    "@dotenvx/dotenvx": "^2.33.0",
+    "drizzle-orm": "0.45.3",
     "next": "^16.4.0",
+    "pg": "8.23.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@types/node": "^22.20.5",
+    "@types/pg": "8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitest/coverage-v8": "^5.0.3",
+    "dependency-cruiser": "^18.5.0",
+    "drizzle-kit": "0.31.11",
+    "lefthook": "^2.2.0",
     "typescript": "6.0.3",
     "vitest": "^5.0.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": []
   }
 }

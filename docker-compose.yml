@@ -1,0 +1,104 @@
+# Local environment (VIT-104). Credentials come ONLY from the environment
+# (.env.local, see .env.example); nothing secret lives in this file.
+# Start with: pnpm dev:up   (= docker compose --env-file .env.local up -d --build --wait)
+
+name: vitrinia
+
+services:
+  postgres:
+    image: postgres:16.15-alpine
+    restart: unless-stopped
+    environment:
+      # Bootstrap superuser: administration only. No service connects with it.
+      POSTGRES_USER: vitrinia_admin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?set POSTGRES_ADMIN_PASSWORD in .env.local}
+      POSTGRES_DB: vitrinia
+      MIGRATOR_PASSWORD: ${MIGRATOR_PASSWORD:?set MIGRATOR_PASSWORD in .env.local}
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD:?set APP_USER_PASSWORD in .env.local}
+    # Early signal if migrator is used outside the migrate service.
+    command: ["postgres", "-c", "log_connections=on"]
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U migrator -d vitrinia"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mailpit:
+    image: axllent/mailpit:v1.27.0
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025" # SMTP
+      - "127.0.0.1:8025:8025" # UI
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      target: app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: development
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET in .env.local}
+      # Connects as app_user (NOBYPASSRLS), never as the owner or the superuser.
+      DATABASE_URL: postgres://app_user:${APP_USER_PASSWORD:?set APP_USER_PASSWORD in .env.local}@postgres:5432/vitrinia
+    ports:
+      - "127.0.0.1:3000:3000"
+    healthcheck:
+      # /api/health does not exist yet; TODO(VIT-140): switch to it when the Builder adds it.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  # PLACEHOLDER: does not process jobs yet (pg-boss/outbox arrive in a later issue).
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      APP_ENV: development
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgres://app_user:${APP_USER_PASSWORD:?set APP_USER_PASSWORD in .env.local}@postgres:5432/vitrinia
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.mjs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # The ONLY service that uses the migrator role (table owner). One-off:
+  #   docker compose --env-file .env.local --profile tools run --rm migrate
+  # Runs `drizzle-kit migrate` (drizzle.config.ts, drizzle/migrations) as migrator (VIT-107).
+  # Equivalent shortcut: pnpm db:migrate:compose
+  migrate:
+    profiles: [tools]
+    build:
+      context: .
+      target: migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://migrator:${MIGRATOR_PASSWORD:?set MIGRATOR_PASSWORD in .env.local}@postgres:5432/vitrinia
+
+volumes:
+  pgdata:
