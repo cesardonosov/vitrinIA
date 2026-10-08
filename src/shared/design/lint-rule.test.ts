@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -14,11 +14,13 @@ const BAD: Record<string, string> = {
 const GOOD =
   'export const ok = () => <div className="bg-primary p-4 min-h-touch" />;\n';
 
-function lint(name: string, source: string) {
+function lint(name: string, source: string, subdir = "") {
   const root = process.cwd();
   const dir = mkdtempSync(join(root, ".lintfx-"));
   try {
-    const file = join(dir, `${name}.tsx`);
+    const folder = join(dir, subdir);
+    mkdirSync(folder, { recursive: true });
+    const file = join(folder, `${name}.tsx`);
     writeFileSync(file, source);
     return spawnSync("pnpm", ["exec", "biome", "lint", file], {
       cwd: root,
@@ -37,6 +39,22 @@ describe("biome no-hardcoded-design-values plugin", () => {
       expect(r.stdout + r.stderr).toContain("Hand-written color or size value");
     });
   }
+  it("flags hard-coded values in infrastructure outside the Store Config schema", () => {
+    const r = lint(
+      "adapter",
+      BAD["string-hex"] ?? "",
+      "src/modules/mail/infrastructure",
+    );
+    expect(r.status, r.stdout + r.stderr).not.toBe(0);
+  });
+  it("allows seller colors in the Store Config domain", () => {
+    const r = lint(
+      "preset",
+      BAD["string-hex"] ?? "",
+      "src/modules/store-config/domain",
+    );
+    expect(r.status, r.stdout + r.stderr).toBe(0);
+  });
   it("accepts token utilities", () => {
     const r = lint("good", GOOD);
     expect(r.status, r.stdout + r.stderr).toBe(0);

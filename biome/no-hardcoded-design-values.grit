@@ -7,9 +7,9 @@ or {
   JsxString(),
   JsTemplateChunkElement()
 } as $s where {
-  // Allowed places: the tokens themselves, tests, stories, Storybook config, and module
-  // domain/infrastructure code, where colors are seller data (Store Config), not styling.
-  $filename <: not r".*(?:shared/design/|\.test\.|\.stories\.|\.storybook/|modules/[^/]+/(?:domain|infrastructure)/).*",
+  // Allowed places: the tokens themselves, tests, stories, Storybook config, and the
+  // Store Config domain and Zod schema, where colors are seller data, not styling.
+  $filename <: not r".*(?:shared/design/|\.test\.|\.stories\.|\.storybook/|modules/store-config/(?:domain|infrastructure/zod)/).*",
   $s <: r".*(?:#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})\b|\b(?:rgb|hsl)a?\(|\[[0-9.]+(?:px|rem|em)\]).*",
   register_diagnostic(span=$s, message="Hand-written color or size value. Use a design token (src/shared/design/tokens.ts) or a Tailwind token utility.", severity="error")
 }
