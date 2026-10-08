@@ -19,13 +19,14 @@ RUN pnpm build
 FROM deps AS migrate
 COPY . .
 USER node
-CMD ["pnpm", "drizzle-kit", "migrate"]
+CMD ["node_modules/.bin/drizzle-kit", "migrate"]
 
 FROM base AS app
 ENV NODE_ENV=production
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/.next ./.next
+# next start writes .next/cache at runtime, so the app user must own .next.
+COPY --from=build --chown=node:node /app/.next ./.next
 COPY --from=build /app/next.config.ts ./next.config.ts
 USER node
 EXPOSE 3000
