@@ -17,7 +17,7 @@ Plan: `docs/sprints/sprint-01.md`.
 - VIT-108 Threat model de tenancy (security) — PR #39; ADRs 0003/0004/0007 ajustados (v2), falta re-verificación
 - VIT-109 Arnés de cruce entre tiendas (security) — PR #56; Done cuando corra en CI
 - VIT-110 Store Config v1 (architect) — PR #55, en review
-- VIT-111 Marca (designer) — PR #33, ronda 2 esperando elección de Cesar
+- VIT-111 Marca (designer) — PR #33, ronda 3 esperando una pista de Cesar
 - VIT-115 Headers y CSP (builder) — PR #42, aprobado por Security; cierra #47
 - VIT-116 Deny de secretos para agentes (architect) — ADR-0009 propuesto, espera a Cesar
 
@@ -43,8 +43,7 @@ Plan: `docs/sprints/sprint-01.md`.
 6. ¿Techo mensual de gasto en tokens de los agentes? (los USD 50 de OPEX no lo cubren)
    A) Fijar un monto y medirlo en cada cierre  B) Sin techo por ahora
    Recomiendo: A
-7. Marca, ronda 2 (descartaste A y B): ¿Etiqueta, Percha o Instantánea? (PR #33, imágenes en el hilo)
-   Recomiendo: Etiqueta
+7. Marca, ronda 3 (descartaste las rondas 1 y 2): una pista en una línea (una marca que te guste, colores, o qué no te gustó) para orientar la ronda 3.
 8. Riesgo residual R3 (threat model): en la POC, quien tenga credenciales de `migrator` o acceso al PC ve todas las tiendas.
    A) Aceptarlo en la POC; rol de solo lectura auditado antes del piloto  B) Separar ambientes ya en Sprint 1
    Recomiendo: A
@@ -63,6 +62,8 @@ Plan: `docs/sprints/sprint-01.md`.
 ## Últimos cambios
 - 2026-10-07 · VIT-105 · Primera corrida de CI en verde (11 jobs); Security pide job de integración, regla set_config estricta y chequeo de WITH CHECK
 - 2026-10-07 · VIT-107/109 · RLS aprobado por Security tras 40+ ataques; arnés genérico de cruce con 8 mutaciones detectadas
+- 2026-10-08 · VIT-111 · Cesar descartó la ronda 2; ronda 3 espera su pista
+- 2026-10-08 · VIT-105 · Security pidió 2 cambios más en el CI; mejoras menores en VIT-160 a VIT-163
 - 2026-10-07 · VIT-111 · Cesar descartó las marcas A y B; ronda 2 con tres caminos nuevos
 - 2026-10-07 · — · Seguimientos de los reviews creados: #43, #44, #48–#52, #54, #57–#59
 - 2026-10-07 · VIT-108 · Threat model de tenancy listo; brechas G1–G9 agregadas a VIT-103/104/105/107/109
