@@ -3,6 +3,7 @@ import {
   ALLOW_ZERO_WIDTH_JOINER,
   isBlankText,
   isPlainText,
+  isPlainTextWith,
   TEXT_LIMITS,
 } from "./text";
 
@@ -42,6 +43,14 @@ describe("isPlainText", () => {
   it("rejects the zero-width joiner while ALLOW_ZERO_WIDTH_JOINER is false", () => {
     expect(ALLOW_ZERO_WIDTH_JOINER).toBe(false);
     expect(isPlainText("👩‍💻")).toBe(false);
+  });
+
+  it("the switch admits only U+200D, nothing else from Cf", () => {
+    const allow = { allowZeroWidthJoiner: true };
+    expect(isPlainTextWith("👩‍💻", allow)).toBe(true);
+    expect(isPlainTextWith("a​b", allow)).toBe(false);
+    expect(isPlainTextWith("a‮b", allow)).toBe(false);
+    expect(isPlainTextWith("a\ud800b", allow)).toBe(false);
   });
 
   it.each([

@@ -38,12 +38,26 @@ const FORBIDDEN_CHARACTERS =
 /** Characters that take no visible space: format, separators and ASCII whitespace. */
 const INVISIBLE_CHARACTERS = /[\p{Cf}\p{Z}\s]/gu;
 
-export function isPlainText(value: string): boolean {
+export interface PlainTextOptions {
+  readonly allowZeroWidthJoiner: boolean;
+}
+
+/** Same rule with the ZWJ switch as a parameter, so both paths are tested. */
+export function isPlainTextWith(
+  value: string,
+  options: PlainTextOptions,
+): boolean {
   if (!value.isWellFormed()) return false;
-  const subject = ALLOW_ZERO_WIDTH_JOINER
+  const subject = options.allowZeroWidthJoiner
     ? value.replaceAll(ZERO_WIDTH_JOINER, "")
     : value;
   return !FORBIDDEN_CHARACTERS.test(subject);
+}
+
+export function isPlainText(value: string): boolean {
+  return isPlainTextWith(value, {
+    allowZeroWidthJoiner: ALLOW_ZERO_WIDTH_JOINER,
+  });
 }
 
 /**
