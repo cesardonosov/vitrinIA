@@ -33,7 +33,7 @@ export type WithStoreTx = <T>(
  * (SET LOCAL does not accept bind parameters). The value is re-validated here
  * even though the type says StoreId, because the type can be bypassed with a cast.
  *
- * No other code may run `SET app.store_id`, `set_config(..., false)` or use the
+ * No other code may set the session-level store variable, `set_config(..., false)` or use the
  * client outside this helper (Semgrep and dependency-cruiser rules, VIT-105/VIT-103).
  */
 export function bindWithStoreTx(db: Database): WithStoreTx {
