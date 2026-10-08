@@ -114,6 +114,8 @@ const POSITIVE_CONTROLS: readonly string[] = [
   "src/infra/db/with-store-tx.ts",
   "src/infra/container.ts",
   "src/app/(portal)/page.ts",
+  "src/infra/env.ts",
+  "src/instrumentation.ts",
 ];
 
 /** Allowed by the tenancy rule even though the package is missing in fixtures. */
