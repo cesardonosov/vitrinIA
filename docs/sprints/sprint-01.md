@@ -1,7 +1,7 @@
 # Sprint 1 — Fundaciones y marca
 
 - Fechas propuestas: jueves 2026-10-08 → miércoles 2026-10-14 (milestone "Sprint 1")
-- Estado: **Plan propuesto, esperando aprobación de Cesar.** Ningún agente ejecuta hasta su OK.
+- Estado: **Plan aprobado por Cesar (2026-10-07).** En ejecución.
 - Objetivo (VITRINIA.md §3.5): repo, CI completo, Clean Architecture, Postgres + RLS, Store Config v1, Docker, Storybook, marca y preset 1.
 - Demo de cierre: el proyecto levanta con un comando y pasa todas las barreras de CI.
 

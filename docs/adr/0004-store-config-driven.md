@@ -3,6 +3,7 @@
 - Estado: Propuesto
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — arquitectura fundamental: define qué es una tienda)
+- Aprobación de Cesar: sí, 2026-10-07 (plan del Sprint 1). Pasa a Aceptado cuando Security cierre su revisión (VIT-108; zona sensible).
 - Issue: VIT-110
 - Zona sensible: parcial. No está en la lista de §9.1, pero el contenido del vendedor se renderiza en vitrinas públicas y el MCP escribirá sobre él. Se pide a Security una revisión del render de URLs y textos (sin threat-model completo obligatorio)
 

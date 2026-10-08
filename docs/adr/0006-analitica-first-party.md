@@ -3,6 +3,7 @@
 - Estado: Propuesto
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — datos sensibles del comportamiento de compradores)
+- Aprobación de Cesar: pendiente; espera sus respuestas sobre pagos y datos personales (STATUS.md).
 - Issue: VIT-125
 - Zona sensible: sí (datos personales, §7.1 "privacidad por diseño") — requiere threat-model de Security antes de pasar a Aceptado
 

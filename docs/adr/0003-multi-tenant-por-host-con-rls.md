@@ -3,6 +3,7 @@
 - Estado: Propuesto
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — arquitectura fundamental y datos de todas las tiendas)
+- Aprobación de Cesar: sí, 2026-10-07 (plan del Sprint 1). Pasa a Aceptado cuando Security cierre su revisión (VIT-108; zona sensible).
 - Issue: VIT-107, VIT-108, VIT-109
 - Zona sensible: sí (RLS/tenancy, auth, cookies) — requiere threat-model de Security antes de pasar a Aceptado
 

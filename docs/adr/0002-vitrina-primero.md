@@ -1,8 +1,9 @@
 # ADR-0002: Vitrina primero — orden de construcción de la POC
 
-- Estado: Propuesto
+- Estado: Aceptado
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — define scope y orden de entrega de la POC)
+- Aprobación de Cesar: sí, 2026-10-07 (plan del Sprint 1)
 - Issue: — (orden de sprints; ver docs/sprints/sprint-01.md)
 - Zona sensible: no directamente (es una decisión de secuencia); los módulos que ordena sí lo son y tienen sus propios ADRs
 

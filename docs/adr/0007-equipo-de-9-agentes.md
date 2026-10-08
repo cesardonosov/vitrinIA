@@ -3,6 +3,7 @@
 - Estado: Propuesto
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — define el proceso de construcción, afecta archivos protegidos `AGENTS.md` y `.claude/settings.json`)
+- Aprobación de Cesar: sí, 2026-10-07 (plan del Sprint 1). Pasa a Aceptado cuando Security cierre su revisión (VIT-108; zona sensible).
 - Issue: VIT-116
 - Zona sensible: sí (secretos e infraestructura: permisos de agentes, CI, push) — requiere threat-model de Security antes de pasar a Aceptado
 

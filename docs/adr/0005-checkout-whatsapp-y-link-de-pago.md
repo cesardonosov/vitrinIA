@@ -3,6 +3,7 @@
 - Estado: Propuesto
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — pagos y modelo de negocio)
+- Aprobación de Cesar: pendiente; espera sus respuestas sobre pagos y datos personales (STATUS.md).
 - Issue: VIT-127
 - Zona sensible: sí (pedidos, pagos, posibles datos personales del comprador) — requiere threat-model de Security antes de pasar a Aceptado
 
