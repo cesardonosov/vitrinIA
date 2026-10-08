@@ -51,14 +51,14 @@ Plan: `docs/sprints/sprint-01.md`.
 9. Next 16 depreca `middleware.ts` en favor de `proxy.ts` (VIT-135). Cambiarlo toca VITRINIA.md §6.4.
    A) Mantener middleware.ts en la POC  B) Migrar con ADR en Sprint 2
    Recomiendo: B
+10. Rubro de la primera tienda real: se parte con ropa; avísame si es otro.
+11. Acciones tuyas (no son decisiones): registrar vitrinia.cl y delegar DNS a Cloudflare antes del Sprint 2; crear el tablero de GitHub Projects (comandos en `docs/sprints/sprint-01.md`); aplicar el ruleset de `main` con los checks requeridos (13 pasos en `docs/runbooks/ci.md`, PR #53); instalar la app de Renovate.
 12. ADR-0009 (VIT-116): negar a los agentes la lectura de `.env.keys` y `.env` sin cifrar.
    A) Reglas deny y ask completas  B) Solo `.env.keys` por ahora
    Recomiendo: A
 13. Store Config: páginas como `pages.home.sections[]` en vez de la lista plana `pages[]` de ADR-0004 (permite agregar páginas sin migración).
    A) Aceptar  B) Volver a `pages[]`
    Recomiendo: A
-10. Rubro de la primera tienda real: se parte con ropa; avísame si es otro.
-11. Acciones tuyas (no son decisiones): registrar vitrinia.cl y delegar DNS a Cloudflare antes del Sprint 2; crear el tablero de GitHub Projects (comandos en `docs/sprints/sprint-01.md`); aplicar el ruleset de `main` con los checks requeridos (13 pasos en `docs/runbooks/ci.md`, PR #53); instalar la app de Renovate.
 
 ## Últimos cambios
 - 2026-10-07 · VIT-105 · Primera corrida de CI en verde (11 jobs); Security pide job de integración, regla set_config estricta y chequeo de WITH CHECK
