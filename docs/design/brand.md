@@ -48,6 +48,7 @@ Cacao y celeste son neutros: dejan respirar cualquier paleta de prendas o produc
 | `link` | azul | **#17658F** | links, estados activos, foco |
 | `link-hover` | azul-700 | #0F5278 | hover de links |
 | `bg` | nieve | #F3F8FB | fondo de página |
+| `border-strong` | neutral-400 | #7C8B95 | borde de inputs, checkbox y controles (contraste de UI ≥ 3:1 sobre blanco y nieve) |
 | `surface-warm` | crema | #FBF6EC | tarjetas cálidas, marco del logo |
 | `surface-tint` | cielo | #E3F2FA | chips, fondos suaves |
 | `surface-dark` | cacao | #2B1A12 | fondo en modo oscuro |
@@ -58,10 +59,10 @@ Cacao y celeste son neutros: dejan respirar cualquier paleta de prendas o produc
 | Paso | Hex | Uso |
 |---|---|---|
 | 50 | #F3F8FB | fondo (nieve) |
-| 100 | #E6EDF1 | fondos de campos, separadores suaves |
+| 100 | #E6EDF1 | separadores suaves, fondos de zonas (los campos de formulario van sobre blanco o nieve, no sobre 100) |
 | 200 | #D3DCE2 | bordes |
-| 300 | #B5C0C7 | bordes fuertes |
-| 400 | #8C979E | iconos deshabilitados (**no usar como texto**, 2,79:1) |
+| 300 | #B5C0C7 | bordes decorativos (1,9:1, no sirven como borde de campo) |
+| 400 | #7C8B95 | **`border-strong`**: borde de campos e iconos de UI (≥ 3:1, SC 1.4.11). **No usar como texto** |
 | 500 | #7A6B63 | texto terciario, leyendas (4,78:1 sobre nieve) |
 | 600 | #5A4A42 | texto secundario (tierra) |
 | 700 | #44342C | texto fuerte, hover |
@@ -79,6 +80,8 @@ Fórmula: luminancia relativa sRGB y ratio (L1+0,05)/(L2+0,05), calculada con sc
 | Texto principal | cacao #2B1A12 | nieve #F3F8FB | 15,59:1 | AA AAA |
 | Texto sobre blanco | cacao #2B1A12 | blanco #FFFFFF | 16,68:1 | AA AAA |
 | Texto secundario | tierra #5A4A42 | nieve #F3F8FB | 7,87:1 | AA AAA |
+| Borde de campo (`border-strong`) | neutral-400 #7C8B95 | blanco #FFFFFF | 3,51:1 | AA UI (3:1) |
+| Borde de campo (`border-strong`) | neutral-400 #7C8B95 | nieve #F3F8FB | 3,28:1 | AA UI (3:1) |
 | Texto terciario | neutral-500 #7A6B63 | nieve #F3F8FB | 4,78:1 | AA |
 | Botón primario | nieve #F3F8FB | cacao #2B1A12 | 15,59:1 | AA AAA |
 | Link sobre fondo | azul #17658F | nieve #F3F8FB | 5,96:1 | AA |
