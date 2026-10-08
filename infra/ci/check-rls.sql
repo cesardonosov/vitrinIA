@@ -160,6 +160,33 @@ BEGIN
     RAISE EXCEPTION 'RLS check: partitions with direct app_user privilege and no tenant policy of their own: %', offenders;
   END IF;
 
+  -- 7. Materialized views cannot have RLS. Any matview readable by app_user that has a store_id
+  --    column or is built on a table with one leaks every tenant's rows.
+  SELECT string_agg(format('%I.%I', n.nspname, c.relname), ', ' ORDER BY n.nspname, c.relname)
+  INTO offenders
+  FROM pg_class c
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE c.relkind = 'm'
+    AND n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+    AND has_table_privilege('app_user', c.oid, 'SELECT')
+    AND (
+      EXISTS (SELECT 1 FROM pg_attribute a
+              WHERE a.attrelid = c.oid AND a.attname = 'store_id'
+                AND a.attnum > 0 AND NOT a.attisdropped)
+      OR EXISTS (
+        SELECT 1
+        FROM pg_rewrite rw
+        JOIN pg_depend d ON d.classid = 'pg_rewrite'::regclass AND d.objid = rw.oid
+                        AND d.refclassid = 'pg_class'::regclass AND d.refobjid <> c.oid
+        JOIN pg_attribute a2 ON a2.attrelid = d.refobjid AND a2.attname = 'store_id'
+                            AND a2.attnum > 0 AND NOT a2.attisdropped
+        WHERE rw.ev_class = c.oid
+      )
+    );
+  IF offenders IS NOT NULL THEN
+    RAISE EXCEPTION 'RLS check: materialized views readable by app_user that expose tenant data (matviews cannot have RLS): %', offenders;
+  END IF;
+
   RAISE NOTICE 'RLS check ok';
 END
 $$;

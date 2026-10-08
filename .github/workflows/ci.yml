@@ -187,18 +187,19 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
-    env:
-      PGHOST: 127.0.0.1
-      PGPORT: "5432"
-      PGUSER: postgres
-      PGPASSWORD: ci-ephemeral-admin
-      PGDATABASE: vitrinia
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Create roles (same script as docker compose)
         # Passwords travel in the environment (roles.psql reads them with \getenv), never on a command line.
+        # Admin credentials live only in this step; later steps (tests) must not inherit them.
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: ci-ephemeral-admin
+          PGDATABASE: vitrinia
         run: |
           MIGRATOR_PASSWORD="$(openssl rand -hex 16)"
           APP_USER_PASSWORD="$(openssl rand -hex 16)"
@@ -241,18 +242,19 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
-    env:
-      PGHOST: 127.0.0.1
-      PGPORT: "5432"
-      PGUSER: postgres
-      PGPASSWORD: ci-ephemeral-admin
-      PGDATABASE: vitrinia
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - name: Create roles (same script as docker compose)
         if: hashFiles('tests/integration/**') != ''
+        # Admin credentials live only in this step; later steps (tests) must not inherit them.
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGPASSWORD: ci-ephemeral-admin
+          PGDATABASE: vitrinia
         run: |
           MIGRATOR_PASSWORD="$(openssl rand -hex 16)"
           APP_USER_PASSWORD="$(openssl rand -hex 16)"
