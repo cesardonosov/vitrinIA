@@ -2,14 +2,23 @@ import { z } from "zod";
 
 const FORBIDDEN_PUBLIC_NAME = /SECRET|KEY|TOKEN|PASSWORD/;
 
+function emptyAsUndefined(value: unknown): unknown {
+  return value === "" ? undefined : value;
+}
+
 const schema = z
   .looseObject({
     APP_ENV: z.enum(["development", "test", "staging", "production"]),
     DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
     SESSION_SECRET: z.string().min(32),
-    LOG_LEVEL: z
-      .enum(["fatal", "error", "warn", "info", "debug", "trace"])
-      .default("info"),
+    // Optional variables: an empty string (as in a copied .env.example) is
+    // treated as absent so the default applies.
+    LOG_LEVEL: z.preprocess(
+      emptyAsUndefined,
+      z
+        .enum(["fatal", "error", "warn", "info", "debug", "trace"])
+        .default("info"),
+    ),
   })
   .superRefine((source, ctx) => {
     for (const name of Object.keys(source)) {
