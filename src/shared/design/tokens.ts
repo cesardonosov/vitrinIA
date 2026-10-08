@@ -70,8 +70,8 @@ export const colorDark: Partial<Record<ColorToken, string>> = {
 export const font = {
   /** Portal/marketing only (ADR-0004: storefronts use system fonts). Loaded via next/font. */
   display:
-    'var(--font-gabarito), ui-rounded, "Segoe UI", system-ui, sans-serif',
-  body: 'var(--font-albert-sans), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+    'var(--font-gabarito, ui-rounded), ui-rounded, "Segoe UI", system-ui, sans-serif',
+  body: 'var(--font-albert-sans, system-ui), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
   /** Storefront stacks (the closed list of ADR-0004 `theme.font`). */
   "system-sans":
     'system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -81,7 +81,7 @@ export const font = {
 } as const;
 
 export const fontWeight = {
-  regular: 400,
+  normal: 400,
   medium: 500,
   semibold: 600,
   bold: 700,

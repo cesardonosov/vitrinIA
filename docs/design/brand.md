@@ -29,7 +29,7 @@ Assets en `docs/design/brand/instantanea/`. Pasan a `public/brand/` en la tarea 
 
 - **Isotipo:** foto instantánea inclinada 8 grados (marco crema, ventana celeste) con una polera en silueta, sobre un tile cacao. Una barra en la base del marco evoca la banda de la foto. En fondo oscuro el tile pasa a celeste y la ventana a cacao, para que no se pierda.
 - **Wordmark:** "vitrinia" en minúsculas, glifos de Gabarito 700 convertidos a trazados `<path>` (sin texto SVG ni fuente embebida). Los puntos de las "i" van en celeste en la versión oscura.
-- **Colores por versión (máx. 3):** clara = cacao, crema, celeste; oscura = cacao (fondo), crema, celeste; mono = solo `currentColor` (el marco y la polera quedan calados, transparentes).
+- **Colores por versión (máx. 3):** clara = cacao, crema, celeste; oscura = cacao (fondo), crema, celeste; mono = solo `currentColor` (el marco y la polera quedan calados, transparentes); `currentColor` solo funciona con el SVG en línea (inline), no con `<img>` ni `background-image`.
 - **Tamaño mínimo:** isotipo 16 px (favicon); logo horizontal 96 px de ancho. Bajo 24 px usar solo el isotipo. A 32 px se lee como "foto con prenda oscura" (verificado en `preview.png`).
 - **Zona de respeto:** alrededor del logo, el alto de la "i" sin punto (x-height, aprox. 1/3 del alto del logo) por todos los lados.
 - **Foto de perfil circular (Instagram):** el motivo cabe en un círculo de radio ~180 sobre 512; usar `icono.svg`.

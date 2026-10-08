@@ -4,6 +4,7 @@ import {
   colorDark,
   font,
   fontSize,
+  fontWeight,
   radius,
   shadow,
   space,
@@ -26,6 +27,7 @@ export function buildTokensCss(): string {
     decl("--radius-*", "initial"),
     decl("--shadow-*", "initial"),
     decl("--breakpoint-*", "initial"),
+    decl("--font-weight-*", "initial"),
     decl("--spacing", `${space.base}rem`),
     decl("--spacing-touch", `${space.touch}rem`),
   ];
@@ -36,6 +38,8 @@ export function buildTokensCss(): string {
     theme.push(decl(`--text-${k}`, `${v.size}rem`));
     theme.push(decl(`--text-${k}--line-height`, `${v.line}rem`));
   }
+  for (const [k, v] of Object.entries(fontWeight))
+    theme.push(decl(`--font-weight-${k}`, v));
   for (const [k, v] of Object.entries(radius))
     theme.push(decl(`--radius-${k}`, v));
   for (const [k, v] of Object.entries(shadow))
@@ -62,7 +66,7 @@ export function buildTokensCss(): string {
 
   return [
     HEADER,
-    `@theme {\n${theme.join("\n")}\n}\n`,
+    `@theme static {\n${theme.join("\n")}\n}\n`,
     `@media (min-width: ${breakpoint.lg}) {\n  :root {\n${desktop.join("\n")}\n  }\n}\n`,
     `[data-theme="dark"] {\n${dark.join("\n")}\n}\n`,
     `@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));\n`,

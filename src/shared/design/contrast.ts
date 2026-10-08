@@ -110,7 +110,7 @@ export interface SellerTheme {
 }
 
 export interface DeriveThemeOptions {
-  /** Page background the primary sits on (borders, focus ring, links). Default white. */
+  /** Page background the primary sits on (borders, focus ring, icons; NOT text: `primary` is only guaranteed 3:1, never use it as a text color). Default white. */
   background?: string;
 }
 

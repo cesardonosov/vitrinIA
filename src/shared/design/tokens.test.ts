@@ -43,7 +43,8 @@ function walk(dir: string, out: string[] = []): string[] {
 
 describe("no hand-written design values", () => {
   it("src has no hex colors or arbitrary px values outside the design folder", () => {
-    const re = /#[0-9a-fA-F]{3,8}\b|\b(?:rgb|hsl)a?\(|\[[0-9.]+(?:px|rem|em)\]/;
+    const re =
+      /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})\b|\b(?:rgb|hsl)a?\(|\[[0-9.]+(?:px|rem|em)\]/;
     const root = join(process.cwd(), "src");
     const offenders = walk(root)
       .filter((f) => /\.(tsx?|css)$/.test(f))

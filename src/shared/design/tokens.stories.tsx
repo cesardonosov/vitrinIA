@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
-import { contrastRatio, deriveTheme } from "./contrast.ts";
+import { contrastRatio, deriveTheme, pickOnColor } from "./contrast.ts";
 import {
   breakpoint,
   color,
@@ -67,12 +67,7 @@ function Overview() {
               key={name}
               name={name}
               value={value}
-              on={
-                contrastRatio("#ffffff", value) >
-                contrastRatio("#000000", value)
-                  ? "#ffffff"
-                  : "#000000"
-              }
+              on={pickOnColor(value)}
             />
           ))}
         </ul>
@@ -85,7 +80,7 @@ function Overview() {
               key={name}
               name={name}
               value={value}
-              on={color["on-primary"]}
+              on={pickOnColor(value)}
             />
           ))}
         </ul>
@@ -101,10 +96,27 @@ function Overview() {
               <li
                 key={p.id}
                 className="flex items-center justify-between gap-3 rounded-sm px-3 py-2"
-                style={{ backgroundColor: r(p.bg), color: r(p.fg) }}
+                style={{
+                  backgroundColor: r(p.bg),
+                  ...(p.min === 3 ? {} : { color: r(p.fg) }),
+                }}
               >
-                <span>{p.id}</span>
-                <span className="font-semibold">
+                <span className="flex items-center gap-2">
+                  {p.min === 3 ? (
+                    <span
+                      className="size-6 shrink-0 rounded-sm border-2"
+                      style={{ borderColor: r(p.fg) }}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  <span style={p.min === 3 ? { color: r("text") } : undefined}>
+                    {p.id}
+                  </span>
+                </span>
+                <span
+                  className="font-semibold"
+                  style={p.min === 3 ? { color: r("text") } : undefined}
+                >
                   {ratio.toFixed(2)}:1 {ratio >= p.min ? "OK" : "FALLA"} (min{" "}
                   {p.min})
                 </span>

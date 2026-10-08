@@ -5,13 +5,13 @@ Fuente única de verdad: `src/shared/design/tokens.ts` (marca "Instantánea", pr
 ## Cómo fluyen
 
 ```
-tokens.ts  --pnpm tokens:build-->  tokens.css (@theme de Tailwind v4 + modo oscuro)  -->  utilidades (bg-primary, text-h1, min-h-touch...)
+tokens.ts  --pnpm tokens:build-->  tokens.css (@theme static de Tailwind v4 + modo oscuro)  -->  utilidades (bg-primary, text-h1, min-h-touch...)
     |--> contrast.ts (contrastRatio, pickOnColor, deriveTheme)
     |--> tokens.test.ts (todos los pares AA + sincronía de tokens.css)
 ```
 
 - `src/shared/design/tokens.css` es **generado**; no se edita a mano (un test falla si se desincroniza: corre `pnpm tokens:build`). Biome lo ignora.
-- `src/app/globals.css` importa Tailwind y `tokens.css`. Se resetean la paleta, fuentes, radios, sombras y breakpoints por defecto de Tailwind (`initial`), así que solo existen utilidades de tokens.
+- `src/app/globals.css` importa Tailwind y `tokens.css`. Se resetean la paleta, fuentes, pesos, radios, sombras y breakpoints por defecto de Tailwind (`initial`), así que solo existen utilidades de tokens.
 - Modo oscuro: `[data-theme="dark"]` sobreescribe solo las variables que cambian (`colorDark`). Variante Tailwind `dark:`.
 
 ## Tokens
@@ -32,12 +32,12 @@ tokens.ts  --pnpm tokens:build-->  tokens.css (@theme de Tailwind v4 + modo oscu
 - `contrastRatio(fg, bg)`: WCAG 2.x (luminancia con sRGB linealizado).
 - `pickOnColor(bg)`: blanco o casi negro (`#111111`), el de mayor contraste.
 - `tokenPairs` (en `tokens.ts`): 32 pares texto/fondo (claro y oscuro), con mínimo 4,5 o 3. `tokens.test.ts` falla si alguno baja.
-- **Color del vendedor:** `deriveTheme(color, { background })` devuelve `{ primary, onPrimary, adjusted }`. Garantiza `onPrimary`/`primary` >= 4,5:1 y `primary`/`background` >= 3:1 (los pares de ADR-0004 v3). Si el color no cumple, ajusta la luminosidad (HSL) conservando el tono hasta cumplir; **nunca rechaza ni muestra error técnico** al vendedor. Salida siempre `#rrggbb` en minúsculas (forma canónica de ADR-0004). Test de propiedades: 1000 colores aleatorios sobre blanco y 500 sobre fondos aleatorios.
-- Pendiente de integración (Builder, módulo `store-config`): llamar `deriveTheme` antes de persistir el tema, y validar `text`/`background` con `contrastRatio`. El módulo de dominio no debe importar `src/shared/design` si ADR-0008 lo prohíbe; en ese caso mover la función pura a un puerto o copiar a `shared/kernel` (decisión del Architect).
+- **Color del vendedor:** `deriveTheme(color, { background })` devuelve `{ primary, onPrimary, adjusted }`. Garantiza `onPrimary`/`primary` >= 4,5:1 y `primary`/`background` >= 3:1 (los pares de ADR-0004 v3). El 3:1 sirve para bordes, foco e iconos: **la vitrina no debe usar `primary` como color de texto** (para texto solo se garantiza 4,5:1 con `onPrimary` sobre `primary`). Si el color no cumple, ajusta la luminosidad (HSL) conservando el tono hasta cumplir; **nunca rechaza ni muestra error técnico** al vendedor. Salida siempre `#rrggbb` en minúsculas (forma canónica de ADR-0004). Test de propiedades: 1000 colores aleatorios sobre blanco y 500 sobre fondos aleatorios.
+- Pendiente de integración (Builder, módulo `store-config`): llamar `deriveTheme` antes de persistir el tema, y validar `text`/`background` con `contrastRatio`. **ADR-0008 prohíbe que el dominio y la aplicación de `store-config` importen `src/shared/design`**: mover `contrast.ts` (función pura) a `src/shared/kernel` es un seguimiento del Architect; hasta entonces `store-config` no puede llamar a `deriveTheme` desde esas capas.
 
 ## Lint: solo tokens
 
-`biome/no-hardcoded-design-values.grit` (plugin de Biome, corre con `pnpm lint`) marca como error cualquier string con un hex (`#fff`), `rgb()/hsl()` o valor arbitrario de Tailwind (`p-[13px]`, `bg-[#fff]`). Excepciones: `src/shared/design/`, `*.test.*`, `*.stories.*` y `.storybook/`. Además `tokens.test.ts` recorre `src/` buscando fugas (cubre template literals y CSS), equivalente al `rg` de la skill. Limitación: el plugin no ve los `style={{}}` con números ni los template literals; el test sí cubre estos últimos para hex.
+`biome/no-hardcoded-design-values.grit` (plugin de Biome, corre con `pnpm lint`) marca como error cualquier string, atributo JSX (`className="..."`) o fragmento de template literal con un hex (`#fff`), `rgb()/hsl()` o valor arbitrario de Tailwind (`p-[13px]`, `bg-[#fff]`). Excepciones: `src/shared/design/`, `*.test.*`, `*.stories.*` y `.storybook/`. `lint-rule.test.ts` mantiene fixtures que **deben fallar** (string, JSX, template, `rgb()`) y uno que debe pasar, ejecutando `biome lint`. Además `tokens.test.ts` recorre `src/` buscando fugas (incluye CSS). Limitaciones: no ve números sueltos en `style={{}}`; un hex de 3 dígitos legítimo en texto (p. ej. `#add`) se marca como falso positivo.
 
 ## Storybook
 
@@ -46,7 +46,7 @@ tokens.ts  --pnpm tokens:build-->  tokens.css (@theme de Tailwind v4 + modo oscu
 
 ## Tipografía y ADR-0004
 
-La marca usa Gabarito y Albert Sans (Google Fonts), pero ADR-0004 v3 limita las vitrinas a fuentes de sistema. Resolución (manda el ADR): los tokens exponen `font-display`/`font-body` con variables `--font-gabarito`/`--font-albert-sans` y fallback de sistema; **solo el portal/marketing** debe cargarlas con `next/font/google` (layout del portal, tarea del Builder) y las vitrinas usan `font-system-*`. Hoy no se carga ninguna fuente web, así que todo cae al fallback. Cuando se empaqueten, se agregan ids al enum `theme.font` (cambio aditivo).
+La marca usa Gabarito y Albert Sans (Google Fonts), pero ADR-0004 v3 limita las vitrinas a fuentes de sistema. Resolución (manda el ADR): los tokens exponen `font-display`/`font-body` con variables `--font-gabarito`/`--font-albert-sans` **con fallback dentro del `var()`** (`var(--font-albert-sans, system-ui)`; sin él, una variable indefinida invalida `font-family` y el navegador cae a Times New Roman); **solo el portal/marketing** debe cargarlas con `next/font/google` (layout del portal, tarea del Builder) y las vitrinas usan `font-system-*`. Hoy no se carga ninguna fuente web, así que todo cae al fallback. Cuando se empaqueten, se agregan ids al enum `theme.font` (cambio aditivo).
 
 ## Cambiar un token
 
