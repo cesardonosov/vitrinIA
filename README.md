@@ -15,10 +15,23 @@ pnpm install
 pnpm dev             # desarrollo en http://localhost:3000
 ```
 
+### Entorno completo con Docker
+
+Postgres, Mailpit, app y worker (placeholder: aún no procesa jobs) con un comando. Requiere Docker y `.env.local` con las variables de `.env.example`:
+
+```bash
+cp .env.example .env.local   # completar los valores a mano
+pnpm dev:up                  # docker compose --env-file .env.local up -d --build --wait
+pnpm dev:down                # detiene; los datos persisten en el volumen pgdata
+```
+
+App en http://localhost:3000, correos en http://localhost:8025. Detalle, roles `migrator`/`app_user` y problemas comunes en `docs/runbooks/levantar-entorno-local.md`.
+
 ## Scripts
 
 | Comando | Qué hace |
 |---|---|
+| `pnpm dev:up` / `pnpm dev:down` | Levanta / detiene el entorno Docker local |
 | `pnpm build` | Compila la app para producción |
 | `pnpm start` | Sirve el build de producción |
 | `pnpm typecheck` | `tsc --noEmit` (strict, `noUncheckedIndexedAccess`, `noImplicitOverride`) |

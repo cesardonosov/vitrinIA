@@ -1,0 +1,30 @@
+# Isolated Postgres for integration tests (VIT-107). NEVER the development database:
+# separate project name, separate port (55432), data in tmpfs (gone on `down`).
+# Same init scripts as development, so roles and grants are identical.
+#   pnpm test:db:up      start + wait healthy
+#   pnpm db:migrate:test apply migrations as migrator
+#   pnpm test:integration
+#   pnpm test:db:down
+
+name: vitrinia-test
+
+services:
+  postgres-test:
+    image: postgres:16.15-alpine
+    environment:
+      POSTGRES_USER: vitrinia_admin
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?set POSTGRES_ADMIN_PASSWORD}
+      POSTGRES_DB: vitrinia
+      MIGRATOR_PASSWORD: ${MIGRATOR_PASSWORD:?set MIGRATOR_PASSWORD}
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD:?set APP_USER_PASSWORD}
+    ports:
+      - "127.0.0.1:55432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./infra/docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U migrator -d vitrinia"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
