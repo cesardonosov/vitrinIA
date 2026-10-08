@@ -3,7 +3,7 @@
 - Estado: Propuesto
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — datos personales)
-- Aprobación de Cesar: pendiente. El 2026-10-08 dijo "revisa lo legal, entiendo que son 5 años"; este ADR contrasta esa cifra con la ley.
+- Aprobación de Cesar: aprobado el 2026-10-08 (eligió la alternativa 1: pedido 6 años, contacto del comprador anonimizado a los 24 meses). Antes había dicho "entiendo que son 5 años"; este ADR contrasta esa cifra con la ley.
 - Issue: por crear
 - Zona sensible: sí (datos personales) — requiere revisión de Security antes de pasar a Aceptado
 
@@ -50,6 +50,5 @@
 
 ## Pendiente para Aceptado
 
-- OK de Cesar al plazo de 24 meses para el contacto del comprador.
 - Revisión de Security.
 - Revisión de un abogado antes del piloto público (junto con el aviso de privacidad).

@@ -34,9 +34,7 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 ## Esperando a Cesar
 1. Pagos: resuelta (2026-10-08). Varias opciones por tienda: link de Mercado Pago, link de Flow y transferencia. Cambios solo desde el portal, nunca por MCP. En ADR-0005.
 2. Datos del comprador: resuelta (2026-10-08). "Todo lo necesario": nombre y teléfono siempre; correo opcional; dirección solo con despacho; RUT, razón social y giro solo con factura. En ADR-0005.
-3. Retención: no existe un plazo legal de 5 años. El registro tributario de la venta exige 6 años (art. 200 del Código Tributario); la Ley 21.719 pide el mínimo para el contacto del comprador. Propuesta en ADR-0010:
-   A) Pedido 6 años y contacto del comprador anonimizado a los 24 meses  B) Todo 5 años  C) Todo 6 años
-   Recomiendo: A
+3. Retención: resuelta (2026-10-08). Pedido 6 años y contacto del comprador anonimizado a los 24 meses; no existe un plazo legal de 5 años. En ADR-0010, falta revisión de Security.
 4. Aviso de privacidad: resuelta (2026-10-08). Borrador provisorio redactado por IA, no revisado por abogado, en un Claude Doc. No había skill legal disponible. Revisión de abogado antes del piloto público.
 5. Moderación: resuelta (2026-10-08). Aprobación manual antes de publicar; revisa Cesar.
 6. Gasto en IA: resuelta (2026-10-08). Tope de USD 100 al mes para el Claude del administrador. Las tiendas usan su propia IA vía MCP, así que VitrinIA no paga IA por tienda.
@@ -58,7 +56,8 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 
 ## Últimos cambios
 - 2026-10-08 · — · Cesar respondió pagos, datos del comprador, aviso, moderación y gasto en IA; retención propuesta en ADR-0010
-- 2026-10-08 · VIT-113 · Llegó el catálogo de Kanuwiñ (5 productos, 7 formatos); quedan 4 preguntas a Cesar en el hilo
+- 2026-10-08 · VIT-113 · Catálogo de Kanuwiñ confirmado: vende directo, precios PVP definitivos, fichas correctas; el contacto de ventas del PDF no se publica
+- 2026-10-08 · ADR-0010 · Cesar aprobó la retención: pedido 6 años, contacto del comprador 24 meses
 - 2026-10-08 · — · Cesar dijo "Mergea": 9 PRs en main; #55 reemplazado por #66 para que el CI corriera completo
 - 2026-10-08 · VIT-111 · Cesar eligió Instantánea (ronda 2, camino 3) como marca provisoria; tokens en PR #65
 - 2026-10-08 · VIT-113 · Primera tienda real: semillas para aves exóticas
