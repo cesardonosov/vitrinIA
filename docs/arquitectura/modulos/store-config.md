@@ -41,7 +41,7 @@ UUID v7 generado por la app (sin `DEFAULT`; un `CHECK` rechaza otras versiones),
 
 ## Cómo agregar una tabla de tienda
 
-Sigue `schema-change` y `db-migration`: `store_id uuid not null`, `UNIQUE (store_id, id)`, FK compuestas, índice con `store_id` primero, y en la misma migración `ENABLE`/`FORCE` RLS, política con `USING` y `WITH CHECK` con la expresión de arriba y el `GRANT` mínimo. Agrega su fila al test de enumeración de VIT-109.
+Sigue `schema-change` y `db-migration`: `store_id uuid not null`, `UNIQUE (store_id, id)`, FK compuestas, índice con `store_id` primero, y en la misma migración `ENABLE`/`FORCE` RLS, política con `USING` y `WITH CHECK` con la expresión de arriba y el `GRANT` mínimo. El arnés de cruce de tiendas (`pnpm test:tenant-isolation`, VIT-109) la enumera solo desde el catálogo y le genera todos los tests; si la tabla tiene FK a otra tabla de tienda o `CHECK` que el seed genérico no puede satisfacer, agrega un seeder en `tests/integration/tenant-isolation/seeders.ts` (ver `docs/qa/tenant-isolation.md`).
 
 ## Pendiente conocido
 

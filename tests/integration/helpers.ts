@@ -4,29 +4,7 @@ import { bindWithStoreTx } from "@/infra/db/with-store-tx";
 import { uuidv7 } from "@/infra/uuid-v7";
 import { domains, stores } from "@/modules/store-config/infrastructure/schema";
 import { StoreId } from "@/shared/kernel";
-
-/**
- * Safety: integration tests only ever talk to the isolated test Postgres
- * (docker-compose.test.yml). They read TEST_* variables, never DATABASE_URL, and
- * refuse non-loopback hosts or a URL equal to the development DATABASE_URL.
- */
-function requireTestUrl(name: string): string {
-  const raw = process.env[name];
-  if (!raw) {
-    throw new Error(
-      `${name} is not set. Start the test database with "pnpm test:db:up" and export TEST_DATABASE_URL (app_user) and TEST_MIGRATOR_DATABASE_URL (migrator).`,
-    );
-  }
-  const url = new URL(raw);
-  const loopback = ["localhost", "127.0.0.1", "::1", "[::1]", "postgres-test"];
-  if (!loopback.includes(url.hostname)) {
-    throw new Error(`${name} must point to a local test database`);
-  }
-  if (process.env.DATABASE_URL && process.env.DATABASE_URL === raw) {
-    throw new Error(`${name} must not equal DATABASE_URL (development)`);
-  }
-  return raw;
-}
+import { requireTestUrl } from "./test-url";
 
 export function openAppUser(max = 5): DatabaseHandle {
   return createDatabase({
