@@ -28,11 +28,29 @@ describe("checkUrlAgainstRule (mechanism)", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("compares hosts case-insensitively", () => {
-    expect(checkUrlAgainstRule("f", rule, "https://LINK.example.CL/x").ok).toBe(
-      true,
-    );
-  });
+  it.each([
+    ["uppercase scheme and host", "HTTPS://WWW.example.cl/x"],
+    ["mixed-case host", "https://LINK.example.CL/x"],
+    ["missing slashes", "https:www.example.cl/x"],
+    ["three slashes", "https:///www.example.cl/x"],
+    ["percent-encoded dot segment", "https://www.example.cl/%2e/x"],
+    ["explicit default port", "https://www.example.cl:443/x"],
+    ["fullwidth host", "https://ｗｗｗ.example.cl/x"],
+    ["unicode host", "https://exämple.cl/x"],
+    ["NUL byte", "https://www.example.cl/x\u0000"],
+    ["newline", "https://www.example.cl/x\n"],
+    ["tab inside host", "https://www.exam\tple.cl/x"],
+    ["double quotes", 'https://www.example.cl/x"q"'],
+    ["html injection", "https://www.example.cl/x'><script>"],
+    ["space in path", "https://www.example.cl/a b"],
+    ["trailing whitespace", "https://www.example.cl/x "],
+    ["leading whitespace", " https://www.example.cl/x"],
+  ])(
+    "rejects a value that is not byte-identical to URL.href (%s)",
+    (_label, value) => {
+      expect(reasonOf(value)).toBe("not-canonical");
+    },
+  );
 
   it.each([
     ["http://link.example.cl/x", "scheme"],
@@ -55,6 +73,16 @@ describe("checkUrlAgainstRule (mechanism)", () => {
     ["not a url", "unparseable"],
   ])("rejects %s (%s)", (value, reason) => {
     expect(reasonOf(value)).toBe(reason);
+  });
+
+  it("a lone apostrophe in the path is canonical per WHATWG (React escapes it in href)", () => {
+    // Documented, not a gap: `'` is not percent-encoded by the URL parser, so
+    // the canonical rule alone cannot reject it. `<`, `>` and `"` are encoded
+    // and therefore rejected above. The storefront never interpolates the
+    // value into raw HTML; React attribute escaping covers `'`.
+    expect(
+      checkUrlAgainstRule("f", rule, "https://www.example.cl/x'q").ok,
+    ).toBe(true);
   });
 
   it("rejects over-long urls before parsing", () => {

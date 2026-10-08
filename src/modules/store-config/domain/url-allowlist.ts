@@ -11,7 +11,9 @@ import type { UrlNotAllowed } from "./errors";
  * Every URL field of the Store Config declares its own allowed schemes AND
  * hosts. Anything outside the row is rejected: `http:`, `javascript:`, `data:`,
  * IP literals, ports, userinfo and punycode (`xn--`) hosts. A field without a
- * row here cannot hold a URL at all.
+ * row here cannot hold a URL at all. The value must also be canonical
+ * (`value === new URL(value).href`): producers (form, MCP) serialise before
+ * writing; the validator never normalises.
  *
  * Owner: Architect. Changing a row goes through Security (`security-review`).
  * It is code, never per-store or MCP configurable.
@@ -81,6 +83,20 @@ export function checkUrlAgainstRule(
       notAllowed(field, "unparseable", "url is not absolute or not parseable"),
     );
   }
+  // The stored value must be byte-identical to the WHATWG serialisation.
+  // Otherwise the parser's normalisation (case, `:443`, `%2e`, stripped
+  // control characters, IDNA mapping of look-alike hosts, percent-encoding
+  // of quotes) would make the checks below pass on a value whose bytes the
+  // storefront would still emit verbatim.
+  if (value !== url.href) {
+    return Result.err(
+      notAllowed(
+        field,
+        "not-canonical",
+        "url must be in canonical form (as serialised by the URL parser)",
+      ),
+    );
+  }
   if (!rule.schemes.includes(url.protocol)) {
     return Result.err(
       notAllowed(field, "scheme", "url scheme is not allowed for this field"),
@@ -94,7 +110,8 @@ export function checkUrlAgainstRule(
   if (url.port !== "") {
     return Result.err(notAllowed(field, "port", "url must not specify a port"));
   }
-  const host = url.hostname.toLowerCase();
+  // Already lowercase ASCII: the canonical check above guarantees it.
+  const host = url.hostname;
   if (host.startsWith("[") || IPV4_LITERAL.test(host)) {
     return Result.err(
       notAllowed(field, "ip-address", "url host must be a domain name"),

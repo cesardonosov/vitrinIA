@@ -42,6 +42,8 @@ export type UrlNotAllowed = DomainError<"UrlNotAllowed"> & {
   readonly reason:
     | "unparseable"
     | "too-long"
+    /** `value !== new URL(value).href`: the parser had to normalise something. */
+    | "not-canonical"
     | "scheme"
     | "host"
     | "credentials"

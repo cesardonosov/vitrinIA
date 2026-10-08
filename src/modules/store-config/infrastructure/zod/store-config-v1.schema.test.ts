@@ -174,6 +174,9 @@ describe("StoreConfigV1 schema: colours and urls (AC3)", () => {
     "https://127.0.0.1/x",
     "https://xn--mercadopago-xyz.cl/x",
     "https://evil.cl/x",
+    "HTTPS://WWW.mercadopago.cl/x",
+    "https://www.mercadopago.cl:443/x",
+    "https://www.mercadopago.cl/x'><script>",
     // Pending E1: even a plausible provider is rejected until hosts are listed.
     "https://www.mercadopago.cl/checkout/abc",
   ])("rejects paymentLink %s (no host is allowed until E1)", (url) => {
