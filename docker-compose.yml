@@ -85,7 +85,8 @@ services:
 
   # The ONLY service that uses the migrator role (table owner). One-off:
   #   docker compose --env-file .env.local --profile tools run --rm migrate
-  # drizzle-kit and its config arrive with VIT-107; until then this fails by design.
+  # Runs `drizzle-kit migrate` (drizzle.config.ts, drizzle/migrations) as migrator (VIT-107).
+  # Equivalent shortcut: pnpm db:migrate:compose
   migrate:
     profiles: [tools]
     build:

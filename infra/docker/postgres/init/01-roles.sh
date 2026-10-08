@@ -10,4 +10,4 @@ psql -v ON_ERROR_STOP=1 \
   -v migrator_pw="$MIGRATOR_PASSWORD" \
   -v app_pw="$APP_USER_PASSWORD" \
   --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
-  -f /docker-entrypoint-initdb.d/01-roles.sql
+  -f /docker-entrypoint-initdb.d/roles.psql
