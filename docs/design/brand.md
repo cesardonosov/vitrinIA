@@ -1,7 +1,11 @@
 # Marca VitrinIA
 
-> Estado: **dos propuestas (A y B) para que Cesar elija**. Issue VIT-111. Fecha: 8 de octubre de 2026.
+> Estado: **Ronda 1 (A y B) descartada por Cesar; Ronda 2 con 3 caminos nuevos al final de este documento, pendiente de elección**. Ronda 1, historial: Issue VIT-111. Fecha: 8 de octubre de 2026.
 > Hasta que Cesar elija, nada de esto se traduce a tokens en código (eso es VIT-112). La marca **no está registrada** (INAPI pendiente, ver `docs/PENDIENTES.md`) y el dominio vitrinia.cl está por registrar.
+
+## Ronda 1 (DESCARTADA, se conserva como historial)
+
+Cesar descartó A "Escaparate" y B "Gema" sin indicar el motivo. No reutilizar toldo, gema, V ni esas paletas.
 
 ## Esencia (común a ambas propuestas)
 
@@ -215,3 +219,145 @@ Revisado el 8 de octubre de 2026:
 1. Cesar elige A o B (o pide mezcla).
 2. VIT-112 convierte la paleta y tipografía elegidas en design tokens.
 3. Copiar assets elegidos a `public/brand/` (`logo.svg`, `logo-mono.svg`, `isotipo.svg`, `favicon.svg`, `og-image.svg`) en la tarea de implementación; `og-image.svg` y `favicon.svg` se producen entonces.
+
+---
+
+# Ronda 2 (vigente): tres caminos nuevos
+
+Cesar descartó A y B sin decir qué no le gustó. Esta ronda cambia de territorio en vez de ajustar: ninguna usa toldo, gema ni V, ni las paletas petróleo+coral o índigo+ámbar. Las tres parten del primer rubro (ropa) y de lo que ya hace el vendedor: fotos en Instagram y venta por WhatsApp.
+
+Archivos en `docs/design/brand/ronda-2/`: por camino, `<camino>-logo-light.svg`, `<camino>-logo-dark.svg`, `<camino>-icono.svg` (cuadrado 512, a sangre, sin esquinas redondeadas, para subir como foto de perfil) y `<camino>-preview.png` (1080 px de ancho, legible en celular). Copia de las PNG en `/mnt/project-files/marca/ronda-2/`.
+
+Notas técnicas comunes:
+- Los wordmarks son los glifos de la tipografía elegida convertidos a trazados `<path>` (sin texto SVG ni fuente embebida), todas OFL. Los íconos se dibujaron desde cero con primitivas geométricas.
+- Logo horizontal = ícono en tile redondeado + wordmark. La versión oscura invierte el tile para que no se pierda sobre fondo oscuro.
+- Contrastes WCAG 2.x (luminancia relativa sRGB, ratio (L1+0,05)/(L2+0,05)), calculados con script. AA = 4,5:1 texto normal; todos los pares listados superan 4,5:1.
+- Ícono a 32 px verificado a la vista en las PNG (siluetas de un solo bloque, sin detalle fino que se pierda). Zona segura para el recorte circular de Instagram: el motivo cabe en un círculo de radio ~180 sobre 512.
+- Pendiente igual que ronda 1: búsqueda en INAPI y comparación lado a lado con marcas existentes (una percha y una etiqueta son motivos comunes en moda; la ejecución es propia pero conviene búsqueda de anterioridad antes de registrar).
+
+## Camino 1: "Etiqueta"
+
+**Concepto:** cada producto sale con su etiqueta de precio puesta; VitrinIA es la etiqueta colgada de la ropa, con una "i" de información.
+
+- Ícono: etiqueta de ropa inclinada con hoyo y cordel, "i" en el centro, crema sobre copihue (magenta).
+- Sensación: editorial, boutique, cálida; el contrapunto serif la aleja de las apps de tienda.
+- Tipografía: **Young Serif** 400 (títulos y wordmark) + **Instrument Sans** 400/500/600 (texto). Ambas OFL, Google Fonts, con ñ, tildes y ¿¡.
+
+| Token | Hex | Uso |
+|---|---|---|
+| ink | #1C1917 | texto, fondo oscuro |
+| paper | #F6EEE2 | fondo |
+| copihue | #B3124F | marca, botón primario, links |
+| copihue-claro | #FF8DB0 | acento en modo oscuro |
+| rosa | #FBE3EC | chips, fondos suaves |
+| humo | #5B534C | texto secundario |
+
+| Par | Ratio |
+|---|---|
+| ink sobre paper | 15,20:1 |
+| humo sobre paper | 6,55:1 |
+| ink sobre blanco | 17,49:1 |
+| blanco sobre copihue (botón) | 6,74:1 |
+| copihue sobre paper (link) | 5,86:1 |
+| copihue sobre rosa (chip) | 5,55:1 |
+| paper sobre ink (modo oscuro) | 15,20:1 |
+| copihue-claro sobre ink | 8,07:1 |
+| ink sobre copihue-claro (botón oscuro) | 8,07:1 |
+
+**Tono:** cercano, con humor suave, de conversación entre vendedora y clienta. Tuteo.
+1. "Tu ropa, con su etiqueta puesta."
+2. "Sube la foto, ponle precio y listo: ya está en la vitrina."
+3. "Ojo: esta talla se agotó. Escríbenos y te avisamos si vuelve."
+
+**Por qué sirve:** la ropa se vende con etiqueta (talla, precio), y esa idea ya está en la cabeza de la clienta. Una etiqueta se lee a 32 px, y el serif cálido hace que la vitrina chica parezca boutique y no plantilla. Riesgo: el copihue saturado compite con fotos rosadas o rojas; en vitrinas la marca queda en el marco, no en el contenido.
+
+## Camino 2: "Percha"
+
+**Concepto:** una percha lima para colgar tu colección; abrir la tienda se siente como abrir el clóset y ordenar.
+
+- Ícono: percha de línea gruesa continua, lima sobre carbón.
+- Sensación: urbana, ropa americana / streetwear, joven y directa; wordmark ancho en mayúsculas.
+- Tipografía: **Unbounded** 700 (títulos y wordmark) + **Hanken Grotesk** 400/500/600 (texto). OFL, Google Fonts, con ñ, tildes y ¿¡. Unbounded solo en títulos grandes, nunca en texto corrido.
+
+| Token | Hex | Uso |
+|---|---|---|
+| carbón | #131A16 | texto, fondo oscuro |
+| hueso | #F4F6EE | fondo |
+| lima | #C6F24E | acento (siempre con texto carbón) |
+| bosque | #1E5B3A | marca, botón primario, links |
+| menta | #E3EDD8 | chips, fondos suaves |
+| humo | #4C574F | texto secundario |
+
+| Par | Ratio |
+|---|---|
+| carbón sobre hueso | 16,23:1 |
+| humo sobre hueso | 6,92:1 |
+| hueso sobre bosque (botón) | 7,37:1 |
+| bosque sobre hueso (link) | 7,37:1 |
+| carbón sobre lima (botón acento) | 13,66:1 |
+| lima sobre carbón | 13,66:1 |
+| hueso sobre carbón | 16,23:1 |
+| carbón sobre menta | 14,63:1 |
+| bosque sobre menta | 6,65:1 |
+
+Regla: la lima nunca es color de texto sobre fondo claro (no pasa AA); sobre ella el texto es carbón.
+
+**Tono:** directo, enérgico, frases muy cortas, algo de chilenismo suave sin excluir.
+1. "Cuelga tu colección."
+2. "Sube tus prendas y arma tu vitrina en minutos. Sin pagar nada."
+3. "Tu pedido está en camino. Te escribimos por WhatsApp."
+
+**Por qué sirve:** es la más reconocible a 32 px (silueta de un solo trazo) y la más fácil de distinguir como foto de perfil entre otras cuentas. Encaja con ropa, y el lima sobre oscuro hace destacar las fotos en feed. Riesgo: la percha es el símbolo más obvio de moda; la ejecución propia y el lima la diferencian, y el rubro la limita si después se suman otros rubros.
+
+## Camino 3: "Instantánea"
+
+**Concepto:** cada prenda es una foto con marco; la vitrina es el álbum de tu Instagram convertido en tienda.
+
+- Ícono: foto instantánea inclinada con una polera en la ventana, sobre cacao; versión oscura sobre celeste.
+- Sensación: amable, fresca, cercana a Instagram; no usa ningún color de red social.
+- Tipografía: **Gabarito** 700 (títulos y wordmark) + **Albert Sans** 400/500/600 (texto). OFL, Google Fonts, con ñ, tildes y ¿¡.
+
+| Token | Hex | Uso |
+|---|---|---|
+| cacao | #2B1A12 | texto, marca, botón primario |
+| nieve | #F3F8FB | fondo |
+| crema | #FBF6EC | tarjetas cálidas |
+| celeste | #8CCBEA | acento (con texto cacao) |
+| azul | #17658F | links, estados activos |
+| cielo | #E3F2FA | chips, fondos suaves |
+| tierra | #5A4A42 | texto secundario |
+
+| Par | Ratio |
+|---|---|
+| cacao sobre nieve | 15,59:1 |
+| tierra sobre nieve | 7,87:1 |
+| nieve sobre cacao (botón) | 15,59:1 |
+| azul sobre nieve (link) | 5,96:1 |
+| cacao sobre celeste (botón acento) | 9,41:1 |
+| celeste sobre cacao | 9,41:1 |
+| crema sobre cacao | 15,48:1 |
+| azul sobre cielo | 5,57:1 |
+| cacao sobre crema | 15,48:1 |
+
+**Tono:** amable y práctico, habla de fotos y de clientas, como una amiga que ayuda a armar la tienda.
+1. "Tu Instagram, ahora con carrito."
+2. "Usa tus mejores fotos: ellas venden por ti."
+3. "Tu clienta ya puede elegir su talla y pedirte por WhatsApp."
+
+**Por qué sirve:** el vendedor ya vive en fotos; el marco instantánea comunica "tu foto es la protagonista" y la marca queda como borde discreto. El cacao + celeste es neutral, deja respirar cualquier paleta de prendas. Riesgo: más detalle en el ícono (polera dentro de marco); a 32 px se lee como "foto con prenda oscura", pero no es tan limpio como la percha.
+
+## Comparación rápida ronda 2
+
+| | 1 Etiqueta | 2 Percha | 3 Instantánea |
+|---|---|---|---|
+| Sensación | boutique, editorial | urbana, directa | amable, Instagram |
+| Colores | magenta copihue + papel + tinta | lima + carbón + verde bosque | cacao + celeste |
+| Tipografía | serif | sans ancha | sans redonda |
+| Lectura a 32 px | muy buena | la mejor | buena |
+| Riesgo | rosa/rojo compite con fotos | motivo muy obvio, muy "ropa" | ícono con más detalle |
+
+## Próximos pasos (ronda 2)
+
+1. Cesar elige un camino (o pide mezcla); la ronda 1 no se retoma.
+2. VIT-112 convierte paleta y tipografía elegidas en design tokens.
+3. Los assets elegidos pasan a `public/brand/` en la tarea de implementación; `favicon.svg` y `og-image.svg` se producen entonces.
