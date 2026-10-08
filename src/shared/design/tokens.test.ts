@@ -50,6 +50,11 @@ describe("no hand-written design values", () => {
       .filter((f) => /\.(tsx?|css)$/.test(f))
       .filter((f) => !f.includes(join("src", "shared", "design")))
       .filter((f) => !/\.(test|stories)\.tsx?$/.test(f))
+      // Module domain/infrastructure colors are seller data (Store Config), not styling.
+      .filter(
+        (f) =>
+          !/[\\/]modules[\\/][^\\/]+[\\/](domain|infrastructure)[\\/]/.test(f),
+      )
       .filter((f) => re.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
   });

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 0,
+  "name": "Café Ñandú",
+  "tagline": "Granos tostados en Valparaíso",
+  "whatsapp": "+56987654321",
+  "primaryColor": "#7c2d12",
+  "paymentLink": "https://mpago.la/abc123",
+  "sections": [
+    {
+      "type": "hero",
+      "props": { "title": "Café de origen", "subtitle": "Tostado cada semana" }
+    },
+    { "type": "product-grid", "props": { "source": "all", "limit": 12 } },
+    { "type": "whatsapp-cta", "props": { "label": "Pedir por WhatsApp" } }
+  ],
+  "features": { "showStock": true, "search": false, "unknownFlag": true }
+}

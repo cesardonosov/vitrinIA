@@ -209,9 +209,7 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f infra/docker/postgres/init/roles.psql
           echo "MIGRATOR_URL=postgresql://migrator:${MIGRATOR_PASSWORD}@127.0.0.1:5432/vitrinia" >> "$GITHUB_ENV"
       - uses: ./.github/actions/setup
-        if: hashFiles('drizzle/migrations/**') != ''
       - name: Apply migrations as migrator
-        if: hashFiles('drizzle/migrations/**') != ''
         # VIT-107 must provide the `db:migrate` script; it reads DATABASE_URL.
         env:
           DATABASE_URL: ${{ env.MIGRATOR_URL }}
@@ -221,8 +219,7 @@ jobs:
           ADMIN_DATABASE_URL: postgresql://postgres:ci-ephemeral-admin@127.0.0.1:5432/vitrinia
         run: bash infra/ci/rls-check.sh
 
-  # Required check. Always runs so the check always reports; the steps are skipped until
-  # tests/integration exists (hashFiles is not allowed in a job-level `if`).
+  # Required check. No step is gated: missing tests/migrations must fail CI, never skip silently.
   integration:
     name: integration
     needs: rls-check
@@ -247,7 +244,6 @@ jobs:
         with:
           persist-credentials: false
       - name: Create roles (same script as docker compose)
-        if: hashFiles('tests/integration/**') != ''
         # Admin credentials live only in this step; later steps (tests) must not inherit them.
         env:
           PGHOST: 127.0.0.1
@@ -265,18 +261,25 @@ jobs:
           echo "MIGRATOR_URL=postgresql://migrator:${MIGRATOR_PASSWORD}@127.0.0.1:5432/vitrinia" >> "$GITHUB_ENV"
           echo "APP_PW=${APP_USER_PASSWORD}" >> "$GITHUB_ENV"
       - uses: ./.github/actions/setup
-        if: hashFiles('tests/integration/**') != ''
       - name: Apply migrations as migrator
-        if: hashFiles('tests/integration/**') != ''
         env:
           DATABASE_URL: ${{ env.MIGRATOR_URL }}
         run: pnpm db:migrate
       - name: Integration tests (RLS, pool leak, host resolution)
-        if: hashFiles('tests/integration/**') != ''
         env:
           TEST_DATABASE_URL: postgresql://app_user:${{ env.APP_PW }}@127.0.0.1:5432/vitrinia
           TEST_MIGRATOR_DATABASE_URL: ${{ env.MIGRATOR_URL }}
         run: pnpm test:integration
+      - name: Cross-tenant harness (VIT-109)
+        env:
+          TEST_DATABASE_URL: postgresql://app_user:${{ env.APP_PW }}@127.0.0.1:5432/vitrinia
+          TEST_MIGRATOR_DATABASE_URL: ${{ env.MIGRATOR_URL }}
+        run: pnpm test:tenant-isolation
+      - name: Cross-tenant harness can fail (mutation check)
+        env:
+          TEST_DATABASE_URL: postgresql://app_user:${{ env.APP_PW }}@127.0.0.1:5432/vitrinia
+          TEST_MIGRATOR_DATABASE_URL: ${{ env.MIGRATOR_URL }}
+        run: pnpm test:tenant-isolation:mutations
 
   build:
     name: build
