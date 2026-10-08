@@ -24,6 +24,16 @@ describe("parseEnv", () => {
     expect(parseEnv(valid).LOG_LEVEL).toBe("info");
   });
 
+  it("treats an empty LOG_LEVEL as absent (default info)", () => {
+    expect(parseEnv({ ...valid, LOG_LEVEL: "" }).LOG_LEVEL).toBe("info");
+  });
+
+  it("still rejects an invalid non-empty LOG_LEVEL", () => {
+    expect(failure({ ...valid, LOG_LEVEL: "loud" }).variables).toEqual([
+      "LOG_LEVEL",
+    ]);
+  });
+
   it("fails naming DATABASE_URL when it is missing", () => {
     const { DATABASE_URL: _omitted, ...rest } = valid;
     const error = failure(rest);
