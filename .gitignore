@@ -9,3 +9,4 @@ infra/cloudflare/*.json
 coverage/
 *.log
 .DS_Store
+storybook-static
