@@ -7,8 +7,9 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "lcov"],
       // Domain and application code must stay above 90% (AGENTS.md §11).
+      // Scoped to the kernel inside src/shared: other shared folders join when they exist.
       include: [
-        "src/shared/**/*.ts",
+        "src/shared/kernel/**/*.ts",
         "src/modules/**/{domain,application}/**/*.ts",
       ],
       exclude: ["**/*.test.ts", "**/index.ts"],

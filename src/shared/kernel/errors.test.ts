@@ -13,7 +13,7 @@ describe("domainError", () => {
   it("keeps the code as a literal type usable as a discriminant", () => {
     type NotFound = DomainError<"NotFound">;
     type Conflict = DomainError<"Conflict">;
-    const describe = (e: NotFound | Conflict): string => {
+    const label = (e: NotFound | Conflict): string => {
       switch (e.code) {
         case "NotFound":
           return "missing";
@@ -22,8 +22,8 @@ describe("domainError", () => {
       }
     };
 
-    expect(describe(domainError("NotFound", "x"))).toBe("missing");
-    expect(describe(domainError("Conflict", "y"))).toBe("clash");
+    expect(label(domainError("NotFound", "x"))).toBe("missing");
+    expect(label(domainError("Conflict", "y"))).toBe("clash");
   });
 
   it("is a plain object, never a thrown Error", () => {
@@ -44,6 +44,21 @@ describe("isDomainError", () => {
     expect(isDomainError({ code: 1, message: "x" })).toBe(false);
     expect(isDomainError({ code: "X" })).toBe(false);
     expect(isDomainError(new Error("x"))).toBe(false);
+    expect(isDomainError({ code: "", message: "x" })).toBe(false);
+    expect(
+      isDomainError(Object.assign(new Error("x"), { code: "ECONNREFUSED" })),
+    ).toBe(false);
+    class Custom {
+      readonly code = "X";
+      readonly message = "x";
+    }
+    expect(isDomainError(new Custom())).toBe(false);
+    expect(
+      isDomainError(
+        Object.assign(Object.create(null), { code: "X", message: "x" }),
+      ),
+    ).toBe(true);
+    expect(isDomainError({ ...domainError("X", "x"), extra: 1 })).toBe(true);
     expect(isDomainError(null)).toBe(false);
     expect(isDomainError("X")).toBe(false);
   });

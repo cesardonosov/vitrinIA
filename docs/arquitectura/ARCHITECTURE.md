@@ -45,7 +45,7 @@ return Result.match(total, {
 });
 ```
 
-- `Result.all([...])` acumula una lista y corta en el primer error (validaciones de carrito, importaciones).
+- `Result.all([...])` acumula una lista y corta en el primer error (validaciones de carrito, importaciones). Con una tupla literal conserva los tipos por posición: `Result.all([priceResult, idResult])` es `Result<readonly [Money, StoreId], InvalidMoney | InvalidStoreId>`; con un array homogéneo devuelve `Result<ReadonlyArray<T>, E>`.
 - Se narrowea con `if (!result.ok) return result;` o con `Result.isOk` / `Result.isErr`.
 
 ### 2.2 Errores de dominio
@@ -58,7 +58,7 @@ Cada módulo define sus errores extendiendo el tipo con campos propios y una fá
 export type ProductNotFound = DomainError<"ProductNotFound"> & { readonly productId: string };
 ```
 
-`isDomainError(value)` permite distinguir en los bordes un error de dominio de una excepción inesperada.
+`isDomainError(value)` permite distinguir en los bordes un error de dominio de una excepción inesperada. La heurística es estricta: solo acepta objetos planos (prototipo `Object.prototype` o `null`), nunca instancias de `Error` ni de otras clases, con `code` string no vacío y `message` string. Así un `Error` de Node con `code: "ECONNREFUSED"` no se confunde con un error de negocio.
 
 ### 2.3 `Money`
 
@@ -69,7 +69,8 @@ Decisiones (VITRINIA.md §7, pre-mortem: "diseñar Money con float"):
 - `add`, `subtract` devuelven `Result<Money, MoneyError>`: `CurrencyMismatch` si las monedas difieren (nunca una excepción) e `InvalidMoney` (`OutOfRange`) si el resultado sale del rango seguro.
 - `multiply(factor)` solo acepta factores enteros (cantidades). No existe división ni porcentaje en el kernel: el redondeo es una regla de negocio que decidirá el módulo que lo necesite (descuentos, comisiones) con su propio ADR.
 - Es inmutable (`Object.freeze`) y el signo está permitido: un `Money` negativo es válido (reembolsos, líneas de ledger). La regla "un precio no es negativo" pertenece al value object `Price` del módulo `catalog`, fuera de este issue.
-- `toJSON()` devuelve `{ amount, currency }` y `Money.of` lo vuelve a leer: ese es el contrato de persistencia (columnas `amount` entero + `currency`) y de transporte.
+- `toJSON()` devuelve `{ amount, currency }` y `Money.of` lo vuelve a leer: ese es el contrato de persistencia (columnas `amount bigint` + `currency`) y de transporte. En Postgres `amount` es **`bigint`**, no `integer`: un monto CLP individual cabe en `int4`, pero las sumas y agregados (`SUM(amount)` de ventas, ledger) lo desbordan con facilidad. Drizzle lo declara como `bigint("amount", { mode: "number" })` para que siga llegando a `Money.of` como `number`; `Number.isSafeInteger` (2^53) es el límite real y `OutOfRange` lo protege.
+- `-0` se normaliza a `0` en toda construcción: `Money.of(-0, "CLP")` y `subtract` nunca producen un `-0` que rompa `Object.is`, la serialización o las comparaciones.
 - Formatear como `$1.990` es responsabilidad de la presentación (`Intl.NumberFormat("es-CL")`), no del kernel.
 
 ### 2.4 `StoreId`
@@ -79,16 +80,17 @@ Decisiones (VITRINIA.md §7, pre-mortem: "diseñar Money con float"):
 - Normaliza a minúsculas para que la igualdad y la comparación en RLS (`app.store_id`) sean canónicas. `StoreId.equals(a, b)` compara por valor.
 - El mensaje de `InvalidStoreId` no incluye la entrada recibida: puede venir de un atacante y terminaría en logs.
 - La **generación** de IDs no está en el kernel: la hará un puerto `IdGenerator` en infraestructura (Node 22 no trae UUID v7 nativo). Los demás IDs (`ProductId`, `OrderId`...) seguirán el mismo patrón reutilizando `isUuidV7`.
+- **Nunca `gen_random_uuid()` en Postgres** como `DEFAULT` de una columna de ID: genera UUID v4, que `isUuidV7` rechaza (nibble de versión distinto) y que no ordena por tiempo. Los IDs se generan en la aplicación con el `IdGenerator` y la columna no lleva default; `uuidv7()` nativo de Postgres 18 queda como opción futura cuando Supabase lo exponga.
 
 ### 2.5 Reglas para quien usa el kernel
 
 1. Nunca `throw` por un error de negocio: devuelve `Result.err(domainError(...))`.
-2. Nunca `number` con decimales para dinero: `Money` o nada. Los esquemas Drizzle usan `integer` + `currency`.
+2. Nunca `number` con decimales para dinero: `Money` o nada. Los esquemas Drizzle usan `bigint` (`mode: "number"`) + `currency`; nunca `integer` ni `numeric`.
 3. Nunca `string` para identificar una tienda en dominio o aplicación: `StoreId`.
 4. El kernel no crece por conveniencia. Un tipo entra solo si lo usan dos o más módulos y lo aprueba el Architect; lo específico de un módulo vive en su `domain/`.
 
 ### 2.6 Verificación
 
 - Tests colocados junto al código (`*.test.ts`) con Vitest; `pnpm test` y `pnpm test:coverage`.
-- Umbral de cobertura del 90 % (líneas, ramas, funciones, sentencias) sobre `src/shared/**` y `src/modules/**/{domain,application}/**`, configurado en `vitest.config.mts`. El kernel está al 100 %.
+- Umbral de cobertura del 90 % (líneas, ramas, funciones, sentencias) sobre `src/shared/kernel/**` y `src/modules/**/{domain,application}/**` (lo demás de `src/shared/` se incorporará cuando exista y tenga dueño), configurado en `vitest.config.mts`. El kernel está al 100 %.
 - La regla "el kernel no importa nada externo" la verificará dependency-cruiser (VIT-103); hasta entonces se comprueba con `grep -rn "from \"" src/shared/kernel`.

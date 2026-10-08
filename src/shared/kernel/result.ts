@@ -62,16 +62,31 @@ function match<T, E, R>(
   return result.ok ? handlers.ok(result.value) : handlers.err(result.error);
 }
 
-/** Collects results in order; the first error short-circuits. */
-function all<T, E>(
-  results: ReadonlyArray<Result<T, E>>,
-): Result<ReadonlyArray<T>, E> {
-  const values: T[] = [];
+// Distribute over the `Ok | Err` union so the non-matching member contributes `never`.
+type OkOf<R> = R extends Ok<infer T> ? T : never;
+type ErrOf<R> = R extends Err<infer E> ? E : never;
+
+/** Success values of a tuple or array of results, position by position. */
+export type OkValues<Rs extends ReadonlyArray<Result<unknown, unknown>>> = {
+  readonly [K in keyof Rs]: OkOf<Rs[K]>;
+};
+
+/**
+ * Collects results in order; the first error short-circuits.
+ *
+ * With a tuple literal the value types are kept per position
+ * (`Result<readonly [A, B], EA | EB>`); with a homogeneous array it is
+ * `Result<ReadonlyArray<T>, E>`.
+ */
+function all<const Rs extends ReadonlyArray<Result<unknown, unknown>>>(
+  results: Rs,
+): Result<OkValues<Rs>, ErrOf<Rs[number]>> {
+  const values: unknown[] = [];
   for (const result of results) {
-    if (!result.ok) return result;
+    if (!result.ok) return result as Err<ErrOf<Rs[number]>>;
     values.push(result.value);
   }
-  return ok(values);
+  return ok(values as unknown as OkValues<Rs>);
 }
 
 export const Result = Object.freeze({

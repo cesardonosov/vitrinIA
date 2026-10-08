@@ -7,6 +7,7 @@ import { Result } from "./result";
  * - Never a float. `amount` is a safe integer; CLP has no minor unit, so 1990 means $1.990.
  * - Never throws for business failures: construction and arithmetic return `Result`.
  * - Immutable: every operation returns a new frozen instance.
+ * - `-0` is normalised to `0` on every construction.
  * - Sign is allowed (refunds, discounts, ledger lines). Module value objects such as a
  *   product `Price` add the "non-negative" rule on top.
  */
@@ -67,7 +68,8 @@ function checkAmount(amount: number): Result<number, InvalidMoney> {
       ),
     );
   }
-  return Result.ok(amount);
+  // `-0` is an integer too; normalise so Object.is, JSON and toString never see it.
+  return Result.ok(amount === 0 ? 0 : amount);
 }
 
 export class Money {
