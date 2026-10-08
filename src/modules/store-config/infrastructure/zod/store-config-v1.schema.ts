@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { isUuidV7 } from "@/shared/kernel";
-import { HEX_COLOR_PATTERN, meetsAaContrast } from "../../domain/color";
+import {
+  DEFAULT_ON_PRIMARY_COLOR,
+  HEX_COLOR_PATTERN,
+  meetsAaContrast,
+  meetsAaUiContrast,
+} from "../../domain/color";
 import { FONT_IDS, RADIUS_IDS } from "../../domain/fonts";
 import { CHILEAN_MOBILE_E164_PATTERN } from "../../domain/phone";
 import {
@@ -81,17 +86,40 @@ export const themeSchema = z
       primary: hexColor,
       background: hexColor,
       text: hexColor,
+      onPrimary: hexColor.optional().meta({
+        default: DEFAULT_ON_PRIMARY_COLOR,
+        description:
+          "Texto sobre primary (botones, badges). Si falta, la vitrina usa #ffffff y el validador comprueba ese valor.",
+      }),
       accent: hexColor.optional(),
     }),
     font: z.enum(FONT_IDS),
     radius: z.enum(RADIUS_IDS),
   })
   .superRefine((theme, ctx) => {
-    if (!meetsAaContrast(theme.colors.text, theme.colors.background)) {
+    const { primary, background, text } = theme.colors;
+    const onPrimary = theme.colors.onPrimary ?? DEFAULT_ON_PRIMARY_COLOR;
+    if (!meetsAaContrast(text, background)) {
       ctx.addIssue({
         code: "custom",
         path: ["colors", "text"],
         message: "text on background must reach WCAG AA contrast (4.5:1)",
+      });
+    }
+    if (!meetsAaUiContrast(primary, background)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["colors", "primary"],
+        message:
+          "primary on background must reach WCAG AA contrast for UI components (3:1)",
+      });
+    }
+    if (!meetsAaContrast(onPrimary, primary)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["colors", "onPrimary"],
+        message:
+          "onPrimary (or its default #ffffff) on primary must reach WCAG AA contrast (4.5:1)",
       });
     }
   });

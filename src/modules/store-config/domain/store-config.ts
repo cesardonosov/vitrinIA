@@ -28,11 +28,20 @@ export interface StoreIdentity {
   readonly logoImageId?: ImageId;
 }
 
-/** Closed set of colour tokens. Each becomes `--color-<key>` in the storefront. */
+/**
+ * Closed set of colour tokens. Each becomes `--color-<key>` in the storefront.
+ *
+ * Contrast pairs enforced by the validator (ADR-0004 §3, WCAG 2.x):
+ * `text`/`background` >= 4.5:1, `primary`/`background` >= 3:1,
+ * `onPrimary`/`primary` >= 4.5:1 (using `DEFAULT_ON_PRIMARY_COLOR` when
+ * `onPrimary` is absent).
+ */
 export interface ThemeColors {
   readonly primary: string;
   readonly background: string;
   readonly text: string;
+  /** Text over `primary` (buttons, badges). Absent = `DEFAULT_ON_PRIMARY_COLOR`. */
+  readonly onPrimary?: string;
   readonly accent?: string;
 }
 

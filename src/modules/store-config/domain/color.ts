@@ -13,8 +13,18 @@ export function isHexColor(value: string): boolean {
   return HEX_COLOR_PATTERN.test(value);
 }
 
-/** WCAG 2.x minimum contrast for normal text (AA). */
+/** WCAG 2.x minimum contrast for normal text (AA, SC 1.4.3). */
 export const AA_CONTRAST_RATIO = 4.5;
+
+/** WCAG 2.x minimum contrast for UI components and graphics (AA, SC 1.4.11). */
+export const AA_UI_CONTRAST_RATIO = 3;
+
+/**
+ * Text colour over `primary` when `theme.colors.onPrimary` is absent
+ * (ADR-0004 §3). The validator checks this exact value against `primary`,
+ * so the storefront can fall back to it without re-deciding contrast.
+ */
+export const DEFAULT_ON_PRIMARY_COLOR = "#ffffff";
 
 function channel(hex: string, offset: number): number {
   const c = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
@@ -43,4 +53,11 @@ export function meetsAaContrast(
   background: string,
 ): boolean {
   return contrastRatio(foreground, background) >= AA_CONTRAST_RATIO;
+}
+
+export function meetsAaUiContrast(
+  component: string,
+  background: string,
+): boolean {
+  return contrastRatio(component, background) >= AA_UI_CONTRAST_RATIO;
 }

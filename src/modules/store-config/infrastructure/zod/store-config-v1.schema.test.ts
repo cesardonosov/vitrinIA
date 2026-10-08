@@ -188,6 +188,48 @@ describe("StoreConfigV1 schema: colours and urls (AC3)", () => {
     expect(paths).toContain("theme.colors.text");
   });
 
+  function colorsOf(d: Record<string, unknown>): Record<string, unknown> {
+    return (d.theme as Record<string, unknown>).colors as Record<
+      string,
+      unknown
+    >;
+  }
+
+  it("rejects primary/background pairs below 3:1 (UI components)", () => {
+    // #ffd9c2 on #fffaf5 is about 1.2:1
+    const paths = pathsOf(withPatch((d) => (colorsOf(d).primary = "#ffd9c2")));
+    expect(paths).toContain("theme.colors.primary");
+  });
+
+  it("rejects onPrimary/primary pairs below 4.5:1", () => {
+    // light grey on the dark brown primary (#7c2d12)
+    const paths = pathsOf(
+      withPatch((d) => (colorsOf(d).onPrimary = "#7c2d12")),
+    );
+    expect(paths).toContain("theme.colors.onPrimary");
+  });
+
+  it("checks the default onPrimary (#ffffff) against primary when omitted", () => {
+    // #1d4ed8 (blue) on #ffffff: 6.3:1 for the default white onPrimary -> ok
+    const ok = zodStoreConfigValidator.validate(
+      withPatch((d) => {
+        delete colorsOf(d).onPrimary;
+        colorsOf(d).primary = "#1d4ed8";
+      }),
+    );
+    expect(ok.ok).toBe(true);
+    if (ok.ok) expect(ok.value.theme.colors.onPrimary).toBeUndefined();
+    // #ea580c (orange) is 3.4:1 against #fffaf5 (passes 3:1) but white text
+    // on it is 3.6:1 -> rejected at onPrimary even though the key is absent
+    const paths = pathsOf(
+      withPatch((d) => {
+        delete colorsOf(d).onPrimary;
+        colorsOf(d).primary = "#ea580c";
+      }),
+    );
+    expect(paths).toContain("theme.colors.onPrimary");
+  });
+
   it("rejects fonts and radii outside the closed lists", () => {
     expect(
       pathsOf(

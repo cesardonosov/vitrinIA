@@ -45,6 +45,12 @@
                   "type": "string",
                   "pattern": "^#[0-9a-f]{6}$"
                 },
+                "onPrimary": {
+                  "default": "#ffffff",
+                  "description": "Texto sobre primary (botones, badges). Si falta, la vitrina usa #ffffff y el validador comprueba ese valor.",
+                  "type": "string",
+                  "pattern": "^#[0-9a-f]{6}$"
+                },
                 "accent": {
                   "type": "string",
                   "pattern": "^#[0-9a-f]{6}$"

@@ -20,6 +20,7 @@ const ropa: StoreConfigV1 = {
       primary: "#7c2d12",
       background: "#fffaf5",
       text: "#1c1917",
+      onPrimary: "#ffffff",
       accent: "#b45309",
     },
     font: "system-sans",
