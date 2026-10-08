@@ -1,0 +1,31 @@
+flowchart LR
+
+subgraph 0["src"]
+subgraph 1["app"]
+subgraph 2["(portal)"]
+3["page.tsx"]
+end
+4["layout.tsx"]
+end
+5["middleware.ts"]
+subgraph 6["shared"]
+subgraph 7["kernel"]
+8["errors.ts"]
+9["index.ts"]
+A["money.ts"]
+B["result.ts"]
+C["store-id.ts"]
+D["uuid.ts"]
+end
+end
+end
+9-->8
+9-->A
+9-->B
+9-->C
+9-->D
+A-->8
+A-->B
+C-->8
+C-->B
+C-->D

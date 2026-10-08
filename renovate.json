@@ -1,0 +1,47 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "timezone": "America/Santiago",
+  "schedule": ["before 9am on monday"],
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 2,
+  "automerge": false,
+  "platformAutomerge": false,
+  "labels": ["dependencies"],
+  "commitMessagePrefix": "chore(deps):",
+  "rangeStrategy": "pin",
+  "vulnerabilityAlerts": {
+    "minimumReleaseAge": null,
+    "labels": ["dependencies", "security"]
+  },
+  "packageRules": [
+    {
+      "description": "Runtime dependencies: never automerge, longer quarantine",
+      "matchDepTypes": ["dependencies"],
+      "automerge": false,
+      "minimumReleaseAge": "14 days"
+    },
+    {
+      "description": "GitHub Actions stay pinned by full commit SHA",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "minimumReleaseAge": "7 days",
+      "automerge": false
+    },
+    {
+      "description": "Docker images keep a fixed version plus digest",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "pinDigests": true,
+      "minimumReleaseAge": "7 days",
+      "automerge": false
+    },
+    {
+      "description": "Postgres major upgrades are manual decisions",
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}

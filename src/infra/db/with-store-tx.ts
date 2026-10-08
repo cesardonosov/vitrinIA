@@ -1,4 +1,5 @@
 import { sql } from "drizzle-orm";
+import { getEnv } from "@/infra/env";
 import { StoreId } from "@/shared/kernel";
 import { createDatabase, type Database } from "./client";
 
@@ -52,9 +53,9 @@ let defaultHandle: ReturnType<typeof createDatabase> | undefined;
 
 function defaultDb(): Database {
   if (!defaultHandle) {
-    const url = process.env.DATABASE_URL;
-    if (!url) throw new Error("DATABASE_URL is not set");
-    defaultHandle = createDatabase({ connectionString: url });
+    // getEnv() already validated DATABASE_URL as a postgres URL; the index signature widens it.
+    const connectionString = String(getEnv().DATABASE_URL);
+    defaultHandle = createDatabase({ connectionString });
   }
   return defaultHandle.db;
 }

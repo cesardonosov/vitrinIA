@@ -1,0 +1,5 @@
+# Rule fixtures intentionally contain violations.
+.semgrep/
+node_modules/
+.next/
+coverage/
