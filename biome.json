@@ -17,9 +17,16 @@
       }
     }
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "plugins": ["./biome/no-hardcoded-design-values.grit"],
   "files": {
     "includes": [
       "**",
+      "!src/shared/design/tokens.css",
       "!**/.semgrep/rules/vitrinia.ts",
       "!**/.semgrep/rules/vitrinia.tsx"
     ]

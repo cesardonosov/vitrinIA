@@ -1,3 +1,4 @@
+import "./globals.css";
 import type { ReactNode } from "react";
 
 // Dynamic rendering so Next can tag its inline scripts with the per-request CSP nonce.
