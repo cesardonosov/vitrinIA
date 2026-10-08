@@ -1,0 +1,45 @@
+# Weekly: TODOs whose issue was closed or never existed (VIT-105, skill ci-pipeline).
+name: todo-huerfanos
+
+on:
+  schedule:
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  orphan-todos:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Look for orphan TODOs
+        id: scan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set +e
+          bash infra/ci/check-todos.sh > report.txt 2>&1
+          echo "status=$?" >> "$GITHUB_OUTPUT"
+          cat report.txt
+      - name: Open or update the tracking issue
+        if: steps.scan.outputs.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="chore: TODOs huérfanos"
+          body="$(printf 'El chequeo semanal encontró TODOs sin issue abierto:\n\n```\n%s\n```\n\nAsignar a Orchestrator.' "$(cat report.txt)")"
+          n="$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')"
+          if [ -n "$n" ]; then
+            gh issue edit "$n" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi
