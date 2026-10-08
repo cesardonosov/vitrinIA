@@ -47,16 +47,20 @@ La imagen del `Dockerfile` es de desarrollo local, no la de producción.
 
 El `worker` placeholder se niega a arrancar si `DATABASE_URL` no usa `app_user`.
 
-Verificar los roles:
+Verificar los roles (dentro del contenedor, por el socket local: no hace falta contraseña ni se expande en tu shell):
 
 ```bash
-set -a; . ./.env.local; set +a
-docker compose --env-file .env.local exec -T postgres env PGPASSWORD=$POSTGRES_ADMIN_PASSWORD \
-  psql -U vitrinia_admin -d vitrinia -c \
-  "select rolname, rolsuper, rolbypassrls, rolcreaterole from pg_roles where rolname in ('app_user','migrator','host_resolver')"
+docker compose --env-file .env.local exec -T postgres psql -U vitrinia_admin -d vitrinia <<'SQL'
+select rolname, rolsuper, rolbypassrls, rolcreaterole, rolcanlogin
+  from pg_roles where rolname in ('app_user','migrator','host_resolver');
+select c.relname from pg_class c join pg_roles o on o.oid = c.relowner
+  where o.rolname = 'app_user' and c.relnamespace = 'public'::regnamespace;
+SQL
 ```
 
-Resultado esperado: los tres con `f` en `rolsuper`, `rolbypassrls` y `rolcreaterole`; `host_resolver` además con `rolcanlogin = f` (agrega esa columna al select si quieres verlo).
+Resultado esperado: los tres roles con `f` en `rolsuper`, `rolbypassrls` y `rolcreaterole`; `host_resolver` con `rolcanlogin = f`; la segunda consulta (relaciones de las que `app_user` es dueño) devuelve 0 filas.
+
+**Volúmenes existentes:** `host_resolver` y el `GRANT ... WITH INHERIT FALSE, SET TRUE` solo se crean con el volumen vacío. Si tu volumen `pgdata` es anterior a este cambio, hay que recrearlo (`docker compose --env-file .env.local down -v`, destructivo: borra la base local) o la migración de VIT-107 fallará con `role host_resolver is missing`.
 
 ## Migraciones
 

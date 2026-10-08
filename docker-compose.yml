@@ -23,7 +23,7 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./infra/docker/postgres/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U migrator -d vitrinia"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U migrator -d vitrinia"]
       interval: 5s
       timeout: 5s
       retries: 20
