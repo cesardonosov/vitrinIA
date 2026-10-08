@@ -61,7 +61,20 @@ Resultado esperado: ambos con `f` en las tres columnas.
 docker compose --env-file .env.local --profile tools run --rm migrate
 ```
 
-Hoy falla a propósito: `drizzle-kit` y su configuración llegan con VIT-107.
+Aplica `drizzle/migrations` con `drizzle-kit` como `migrator` (atajo: `pnpm db:migrate:compose`). La imagen `migrate` se construye con `pnpm install`, por lo que necesita acceso a npm al hacer `build`.
+
+### Postgres de test aislada (integración)
+
+```bash
+# variables de test (solo en tu shell; nunca en el repo)
+export POSTGRES_ADMIN_PASSWORD=... MIGRATOR_PASSWORD=... APP_USER_PASSWORD=...   # hex
+export TEST_MIGRATOR_DATABASE_URL=postgres://migrator:$MIGRATOR_PASSWORD@127.0.0.1:55432/vitrinia
+export TEST_DATABASE_URL=postgres://app_user:$APP_USER_PASSWORD@127.0.0.1:55432/vitrinia
+pnpm test:db:up && pnpm db:migrate:test && pnpm test:integration
+pnpm test:db:down   # borra el contenedor y sus datos (tmpfs)
+```
+
+Usa el puerto 55432 y un proyecto compose distinto (`vitrinia-test`): no toca la base de desarrollo. Los tests leen solo `TEST_*` y rechazan hosts no locales.
 
 ## Operación diaria
 
@@ -73,7 +86,7 @@ docker compose --env-file .env.local logs -f app
 
 ## Reiniciar la base desde cero (destructivo)
 
-Los scripts de `init/` solo corren con volumen vacío. Si cambias `01-roles.sql` o una contraseña de rol, hay que recrear el volumen, lo que **borra todos los datos locales**. No es un paso de rutina: hazlo solo si aceptas perder la base local, y avisa antes si hay datos que importen.
+Los scripts de `init/` solo corren con volumen vacío. Si cambias `roles.psql` o una contraseña de rol, hay que recrear el volumen, lo que **borra todos los datos locales**. No es un paso de rutina: hazlo solo si aceptas perder la base local, y avisa antes si hay datos que importen.
 
 ```bash
 docker compose --env-file .env.local down -v

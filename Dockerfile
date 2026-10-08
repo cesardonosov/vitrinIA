@@ -15,7 +15,7 @@ FROM deps AS build
 COPY . .
 RUN pnpm build
 
-# One-off migrations. Gets dev dependencies (drizzle-kit arrives with VIT-107).
+# One-off migrations: drizzle-kit (dev dependency) applies drizzle/migrations as migrator.
 FROM deps AS migrate
 COPY . .
 USER node

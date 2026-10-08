@@ -18,4 +18,12 @@ ALTER SCHEMA public OWNER TO migrator;
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 GRANT USAGE ON SCHEMA public TO app_user;
 
--- No table grants here: migrations (VIT-107) give app_user the minimum per table.
+-- No table grants here: each migration gives app_user the minimum per table.
+
+-- host_resolver (VIT-107, threat model C8): NOLOGIN owner of the SECURITY DEFINER
+-- function resolve_host(). It has no password, cannot connect and bypasses nothing:
+-- it only reads verified rows of `domains` through its own RLS policy.
+-- It must be created here because migrator has NOCREATEROLE.
+CREATE ROLE host_resolver NOLOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;
+-- Needed so the migration (running as migrator) can do ALTER FUNCTION ... OWNER TO host_resolver.
+GRANT host_resolver TO migrator;
