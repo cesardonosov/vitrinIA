@@ -56,8 +56,8 @@ Plan: `docs/sprints/sprint-01.md`.
 12. ADR-0009 (VIT-116): negar a los agentes la lectura de `.env.keys` y `.env` sin cifrar.
    A) Reglas deny y ask completas  B) Solo `.env.keys` por ahora
    Recomiendo: A
-13. Store Config: páginas como `pages.home.sections[]` en vez de la lista plana `pages[]` de ADR-0004 (permite agregar páginas sin migración).
-   A) Aceptar  B) Volver a `pages[]`
+13. Store Config (ADR-0004 v3, PR #55): ¿confirmas los desvíos? Páginas como `pages.home.sections[]`, Zod como adaptador, colores hex en minúsculas, solo fuentes de sistema, lectura tolerante por sección en la vitrina (Sprint 2), contraste de `primary` contra el fondo ≥ 3:1 y un color nuevo `onPrimary` (texto sobre botones) ≥ 4.5:1.
+   A) Todos  B) Todos menos `onPrimary` (la vitrina elige blanco o negro sola)  C) Volver a la v2
    Recomiendo: A
 
 ## Últimos cambios
