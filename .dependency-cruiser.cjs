@@ -20,6 +20,7 @@ const COMPOSITION_ROOT = "^src/infra/container\\.ts$";
  * Next.js framework entry points that live at the root of src/ and bootstrap
  * the process (env validation, request headers). They may import platform
  * code in src/infra/ but never the database surface.
+ * VIT-103: exception recorded in ADR-0008 (Decisión) and ARCHITECTURE.md §3.2.
  */
 const FRAMEWORK_ENTRY_POINTS = "^src/(instrumentation|middleware|proxy)\\.ts$";
 
@@ -184,7 +185,7 @@ module.exports = {
     {
       name: "not-to-dev-dep",
       comment:
-        "Production code under src/ must not import devDependencies (test files are excluded from the cruise).",
+        "Production code under src/ must not import devDependencies (test, spec and Storybook story files are excluded from the cruise).",
       severity: "error",
       from: { path: "^src/" },
       to: {
@@ -195,7 +196,7 @@ module.exports = {
   ],
   options: {
     // Test files are not production dependency surface; they may import vitest.
-    exclude: { path: "\\.test\\.tsx?$" },
+    exclude: { path: "\\.(test|spec|stories)\\.tsx?$" },
     doNotFollow: { path: "node_modules" },
     // Follow type-only imports too: "domain imports Zod only for the types" is still a violation.
     tsPreCompilationDeps: true,

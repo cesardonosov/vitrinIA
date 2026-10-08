@@ -23,11 +23,12 @@ Puntos concretos:
 
 1. Catorce reglas, documentadas una por una en `docs/arquitectura/ARCHITECTURE.md` §3.2: cuatro de capas, una entre módulos (`no-cross-module-internals`: solo `application/index.ts` es público), dos del shared kernel, tres de composition root y `src/app/`, dos de tenancy (`drizzle-only-in-infrastructure`, `db-client-only-via-with-store-tx`) y tres de higiene (`no-circular`, `not-to-unresolvable`, `not-to-dev-dep`).
 2. Los imports solo de tipos cuentan (`tsPreCompilationDeps: true`): `domain/` no puede importar Zod "solo por los tipos".
-3. Los archivos `*.test.ts` se excluyen del análisis; todo lo demás bajo `src/` se analiza.
+3. Los archivos `*.test.ts`, `*.spec.ts` y `*.stories.tsx` se excluyen del análisis; todo lo demás bajo `src/` se analiza.
 4. El mismo archivo de configuración gobierna `src/` y los fixtures (rutas relativas al directorio de ejecución), para que no exista una configuración de prueba que diverja de la real.
 5. La suite exige igualdad entre el conjunto de reglas del config y el conjunto de reglas cubiertas por fixtures: una regla sin fixture hace fallar `pnpm test`.
 6. Rutas reservadas para VIT-107: `src/infra/db/client.ts` (conexión cruda, privada de `src/infra/db/`) y `src/infra/db/with-store-tx.ts` (única puerta a tablas de tienda). `src/infra/container.ts` es el composition root y el único archivo que importa `infrastructure/` de varios módulos.
-7. Relajar una regla (`pathNot` nuevo) exige comentario `VIT-xxx` y, si debilita la arquitectura, un ADR. No se baja a `warn`.
+7. Excepción VIT-103: los puntos de entrada de Next.js en la raíz de `src/` (`instrumentation.ts`, `middleware.ts`, `proxy.ts`) pueden importar código de plataforma de `src/infra/` (validación de env, headers), nunca la base de datos, que sigue bloqueada por `drizzle-only-in-infrastructure`.
+8. Relajar una regla (`pathNot` nuevo) exige comentario `VIT-xxx` y, si debilita la arquitectura, un ADR. No se baja a `warn`.
 
 ## Alternativas consideradas
 

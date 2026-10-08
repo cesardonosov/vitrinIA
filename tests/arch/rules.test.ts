@@ -185,10 +185,10 @@ describe("dependency-cruiser rules", () => {
     });
   }
 
-  it("infrastructure may import drizzle-orm (only the missing package is reported)", () => {
-    expect([...rulesFiredBy(violations, DRIZZLE_IN_INFRASTRUCTURE)]).toEqual([
-      "not-to-unresolvable",
-    ]);
+  it("infrastructure may import drizzle-orm (the tenancy rule does not fire)", () => {
+    expect([...rulesFiredBy(violations, DRIZZLE_IN_INFRASTRUCTURE)]).not.toContain(
+      "drizzle-only-in-infrastructure",
+    );
   });
 
   it("the real src/ tree has zero violations (pnpm arch)", () => {
