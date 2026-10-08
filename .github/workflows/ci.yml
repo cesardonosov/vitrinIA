@@ -1,0 +1,305 @@
+# VIT-105. Protected file: only DevOps edits it, with Security review (AGENTS.md section 5).
+# Rules: actions pinned by commit SHA, read-only token by default, no privileged PR triggers.
+# Job names are the required status checks of the `main` ruleset: do not rename without
+# updating docs/runbooks/ci.md and the GitHub ruleset.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  LEFTHOOK: "0"
+  CI: "true"
+
+jobs:
+  install:
+    name: install
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+
+  typecheck:
+    name: typecheck
+    needs: install
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm typecheck
+
+  lint:
+    name: lint
+    needs: typecheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm biome ci .
+
+  commitlint:
+    name: commitlint
+    needs: lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - name: Lint PR commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: pnpm commitlint --from "$BASE_SHA" --to "$HEAD_SHA"
+      - name: Lint last commit (push to main)
+        if: github.event_name == 'push'
+        run: pnpm commitlint --last
+
+  architecture:
+    name: architecture
+    needs: commitlint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      # `arch` is defined by VIT-103 (dependency-cruiser). Red until that branch merges.
+      - run: pnpm arch
+
+  todo-check:
+    name: todo-check
+    needs: architecture
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Self-test of the marker check
+        run: bash infra/ci/test-check-todos.sh
+      - name: Markers must reference an open VIT issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: bash infra/ci/check-todos.sh
+      - name: Applied migrations are immutable
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash infra/ci/check-migrations-immutable.sh "$BASE_SHA"
+
+  gitleaks:
+    name: gitleaks
+    needs: todo-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+
+  semgrep:
+    name: semgrep
+    needs: gitleaks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SEMGREP_VERSION: "1.180.0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install Semgrep (pinned version)
+        run: pipx install "semgrep==${SEMGREP_VERSION}"
+      - name: Custom rules pass their own fixtures
+        run: semgrep --metrics=off --test .semgrep/rules
+      - name: Scan (ERROR findings block)
+        run: >-
+          semgrep scan --metrics=off --error --severity ERROR
+          --config p/typescript --config p/owasp-top-ten --config .semgrep/rules
+          .
+
+  unit:
+    name: unit
+    needs: semgrep
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      # Thresholds (90%) live in vitest.config.mts, scoped to shared + domain/application layers.
+      - run: pnpm test:coverage
+
+  rls-check:
+    name: rls-check
+    needs: unit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16.15-alpine
+        env:
+          # Ephemeral service on the runner; never the development database.
+          POSTGRES_PASSWORD: ci-ephemeral-admin
+          POSTGRES_DB: vitrinia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vitrinia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci-ephemeral-admin
+      PGDATABASE: vitrinia
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Create roles (same script as docker compose)
+        # Passwords travel in the environment (roles.psql reads them with \getenv), never on a command line.
+        run: |
+          MIGRATOR_PASSWORD="$(openssl rand -hex 16)"
+          APP_USER_PASSWORD="$(openssl rand -hex 16)"
+          echo "::add-mask::$MIGRATOR_PASSWORD"
+          echo "::add-mask::$APP_USER_PASSWORD"
+          export MIGRATOR_PASSWORD APP_USER_PASSWORD
+          psql -v ON_ERROR_STOP=1 -f infra/docker/postgres/init/roles.psql
+          echo "MIGRATOR_URL=postgresql://migrator:${MIGRATOR_PASSWORD}@127.0.0.1:5432/vitrinia" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/setup
+        if: hashFiles('drizzle/migrations/**') != ''
+      - name: Apply migrations as migrator
+        if: hashFiles('drizzle/migrations/**') != ''
+        # VIT-107 must provide the `db:migrate` script; it reads DATABASE_URL.
+        env:
+          DATABASE_URL: ${{ env.MIGRATOR_URL }}
+        run: pnpm db:migrate
+      - name: RLS and roles catalog check (with self-tests)
+        env:
+          ADMIN_DATABASE_URL: postgresql://postgres:ci-ephemeral-admin@127.0.0.1:5432/vitrinia
+        run: bash infra/ci/rls-check.sh
+
+  # Required check. Always runs so the check always reports; the steps are skipped until
+  # tests/integration exists (hashFiles is not allowed in a job-level `if`).
+  integration:
+    name: integration
+    needs: rls-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16.15-alpine
+        env:
+          # Ephemeral service on the runner; never the development database.
+          POSTGRES_PASSWORD: ci-ephemeral-admin
+          POSTGRES_DB: vitrinia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vitrinia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: ci-ephemeral-admin
+      PGDATABASE: vitrinia
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Create roles (same script as docker compose)
+        if: hashFiles('tests/integration/**') != ''
+        run: |
+          MIGRATOR_PASSWORD="$(openssl rand -hex 16)"
+          APP_USER_PASSWORD="$(openssl rand -hex 16)"
+          echo "::add-mask::$MIGRATOR_PASSWORD"
+          echo "::add-mask::$APP_USER_PASSWORD"
+          export MIGRATOR_PASSWORD APP_USER_PASSWORD
+          psql -v ON_ERROR_STOP=1 -f infra/docker/postgres/init/roles.psql
+          echo "MIGRATOR_URL=postgresql://migrator:${MIGRATOR_PASSWORD}@127.0.0.1:5432/vitrinia" >> "$GITHUB_ENV"
+          echo "APP_PW=${APP_USER_PASSWORD}" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/setup
+        if: hashFiles('tests/integration/**') != ''
+      - name: Apply migrations as migrator
+        if: hashFiles('tests/integration/**') != ''
+        env:
+          DATABASE_URL: ${{ env.MIGRATOR_URL }}
+        run: pnpm db:migrate
+      - name: Integration tests (RLS, pool leak, host resolution)
+        if: hashFiles('tests/integration/**') != ''
+        env:
+          TEST_DATABASE_URL: postgresql://app_user:${{ env.APP_PW }}@127.0.0.1:5432/vitrinia
+          TEST_MIGRATOR_DATABASE_URL: ${{ env.MIGRATOR_URL }}
+        run: pnpm test:integration
+      - name: Cross-tenant harness (VIT-109)
+        if: hashFiles('tests/integration/tenant-isolation/**') != ''
+        env:
+          TEST_DATABASE_URL: postgresql://app_user:${{ env.APP_PW }}@127.0.0.1:5432/vitrinia
+          TEST_MIGRATOR_DATABASE_URL: ${{ env.MIGRATOR_URL }}
+        run: pnpm test:tenant-isolation
+      - name: Cross-tenant harness can fail (mutation check)
+        if: hashFiles('tests/integration/tenant-isolation/**') != ''
+        env:
+          TEST_DATABASE_URL: postgresql://app_user:${{ env.APP_PW }}@127.0.0.1:5432/vitrinia
+          TEST_MIGRATOR_DATABASE_URL: ${{ env.MIGRATOR_URL }}
+        run: pnpm test:tenant-isolation:mutations
+
+  build:
+    name: build
+    needs: integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup
+      - run: pnpm build
+      - name: Docker images build (no push)
+        run: |
+          docker build --target app -t vitrinia-app:ci .
+          docker build --target worker -t vitrinia-worker:ci .

@@ -12,7 +12,15 @@ if (!url) {
   console.error("DATABASE_URL is required");
   process.exit(1);
 }
-if (decodeURIComponent(new URL(url).username) !== "app_user") {
+let username;
+try {
+  username = decodeURIComponent(new URL(url).username);
+} catch {
+  // Never echo the error or the value: the URL carries the password.
+  console.error("DATABASE_URL is not a valid URL");
+  process.exit(1);
+}
+if (username !== "app_user") {
   console.error("DATABASE_URL must use the app_user role (ADR-0003)");
   process.exit(1);
 }
