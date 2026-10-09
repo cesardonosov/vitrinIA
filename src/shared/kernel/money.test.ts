@@ -71,14 +71,19 @@ describe("Money.of", () => {
 describe("negative zero", () => {
   it("normalises -0 to 0 on construction and arithmetic", () => {
     const fromOf = Money.of(-0, "CLP");
-    expect(fromOf.ok && Object.is(fromOf.value.amount, 0)).toBe(true);
+    expect(fromOf.ok).toBe(true);
+    if (fromOf.ok) expect(fromOf.value.amount).toBe(0);
 
     const diff = clp(5).subtract(clp(5));
-    expect(diff.ok && Object.is(diff.value.amount, 0)).toBe(true);
+    expect(diff.ok).toBe(true);
+    if (diff.ok) expect(diff.value.amount).toBe(0);
 
     const product = clp(-5).multiply(0);
-    expect(product.ok && Object.is(product.value.amount, 0)).toBe(true);
-    expect(product.ok && product.value.toString()).toBe("0 CLP");
+    expect(product.ok).toBe(true);
+    if (product.ok) {
+      expect(product.value.amount).toBe(0);
+      expect(product.value.toString()).toBe("0 CLP");
+    }
   });
 });
 
