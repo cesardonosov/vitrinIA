@@ -1,7 +1,7 @@
 # Pendientes y "por hacer" — VitrinIA
 
 > Temas abiertos de negocio, decisiones por tomar e ideas para después. Dueño: Orchestrator. Cada ítem técnico se convierte en issue `VIT-xxx` cuando entra a un sprint.
-> Última actualización: 7 de octubre de 2026.
+> Última actualización: 9 de octubre de 2026.
 
 ## 1. Decisiones que esperan a Cesar
 
@@ -45,6 +45,7 @@
 - [ ] Almacén analítico dedicado (ClickHouse/BigQuery) cuando el volumen lo exija.
 
 ### Producto
+- [ ] **Mantenedor de tiendas para administradores de VitrinIA** (pedido por Cesar, 2026-10-09; sprint por definir). Mínimo: listar tiendas, aprobar o rechazar la publicación (Cesar modera cada tienda nueva), suspender y ver datos básicos. Después: métricas por tienda, GMV, rubros y denuncias de abuso (panel global del piloto, `VITRINIA.md` §7.1). Requiere rol de administrador separado, login reforzado, registro de cada acción y revisión de Security. Debe existir antes de que el formulario "Pide tu tienda" (Sprint 3) publique tiendas de terceros; si no, se aprueban a mano.
 - [ ] Análisis de URL de referencia → preset.
 - [ ] Asistente IA propio (solo si el MCP tiene demasiada fricción).
 - [ ] Administración por WhatsApp para vendedores.
