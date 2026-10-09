@@ -62,7 +62,7 @@ Paso humano no ejecutado: `cp .env.example .env.local` y completar secretos (ADR
 | D5 | S4 | `docs/runbooks/ci.md` "Estado conocido" | Dice que `pnpm arch` no existe hasta mezclar VIT-103. Ya existe y pasa. Obsoleto | Borrar o actualizar el bloque |
 | D6 | S2 | `ci.md` "Protección de la rama `main`" | Paso humano pendiente: `main` aparece sin protección (`protected:false`, sin rulesets). El objetivo del sprint "main protegida" no se cumple al día de hoy | Cesar configura el ruleset (11 pasos del runbook) o confirma que es no visible por permisos |
 | D7 | S4 | README "Scripts" | La tabla omite `test`, `test:coverage`, `arch`, `todo-check`, `semgrep:test`, `test:integration`, `test:tenant-isolation`, `db:*`. Un novato no sabe cómo reproducir los 12 checks (están solo en `ci.md`) | Enlazar a la tabla de `ci.md` |
-| D8 | S4 | Issue VIT-114 vs tarea | El issue pide actualizar `docs/qa/sprint-01-demo.md`; este reporte está en `docs/qa/sprint-01-demo-check.md` | Alinear nombre en el issue |
+| D8 | S4 | Issue VIT-114 vs tarea | El issue pide actualizar `docs/qa/sprint-01-demo.md`; este reporte está en `docs/qa/sprint-01-demo.md` | Alinear nombre en el issue |
 | D9 | S4 | `pnpm build` | Aviso de Next: archivo `middleware` deprecado en favor de `proxy`. No bloquea | Issue de Builder para Sprint 2 |
 | D10 | S3 | `ci.md` / local | Reproducir `gitleaks` y `semgrep` localmente requiere instalar herramientas no listadas en Requisitos. gitleaks **no verificado** por mí | Documentar instalación (versión fijada) |
 
@@ -75,3 +75,30 @@ Ninguna S1: no hay nada que impida usar el repo con los pasos documentados salvo
 3. Correr `gitleaks detect --redact` donde esté instalado.
 
 ## HANDOFF
+
+```
+HANDOFF
+Completed:
+  - Criterio 2 (checks requeridos en verde en el último PR del sprint): PASA. Los 12 checks en success en 7e79040.
+  - Criterio 3 (fallos reportados con severidad): PARCIAL. Bugs D1-D10 listados con severidad; los issues aún no se crearon.
+  - Gates de CI reproducibles en local verificados (typecheck, lint, arch, todo-check, unit, integration, tenant-isolation, rls-check, semgrep con reglas propias).
+Evidence:
+  - Tabla "Pasos ejecutados" de este documento (pasos 1-17).
+  - check-runs de 7e79040 consultados con gh api.
+Findings:
+  - Criterio 1 (levantar con un comando en < 10 min): PENDIENTE de verificación humana por Cesar, en una máquina con internet directo. No es verificable en el contenedor de QA (sin npm en docker build, y .env.local es paso humano, ADR-0009).
+  - D1-D5, D7, D8, D10: corregidos en el PR de la rama chore/VIT-114-demo-check.
+  - D6: main sin protección de rama (acción de Cesar).
+  - D9: aviso middleware -> proxy; VIT-135, Sprint 2.
+  - gitleaks local no ejecutado.
+Open issues:
+  - Criterio 1 sin verificar; D6; D9.
+Tasks created:
+  - Ninguna (el Orchestrator crea los issues de D6 y D9).
+Next owner:
+  - Cesar (criterio 1 y D6), luego Orchestrator.
+Required input:
+  - Cesar: cp .env.example .env.local, generar 4 secretos, pnpm dev:up, medir tiempo y confirmar 4 servicios healthy y http://localhost:3000; configurar el ruleset de main.
+Priority:
+  - P1
+```
