@@ -34,6 +34,7 @@ export {
   type VersionedConfig,
 } from "../domain/migrations/migrate-to-current";
 export { isChileanMobileE164, toWhatsAppDigits } from "../domain/phone";
+export { AVES_PRESET } from "../domain/presets/aves";
 export { ROPA_PRESET } from "../domain/presets/ropa";
 export { isReservedSlug, RESERVED_SLUGS } from "../domain/reserved-slugs";
 export {

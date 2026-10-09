@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "name": "Tu tienda de alimento para aves",
+    "tagline": "Nutrición premium para aves, pedidos por WhatsApp"
+  },
+  "theme": {
+    "colors": {
+      "primary": "#d4a63a",
+      "background": "#0f1b2d",
+      "text": "#f4efe3",
+      "onPrimary": "#0f1b2d",
+      "accent": "#9db08b"
+    },
+    "font": "system-sans",
+    "radius": "md"
+  },
+  "contact": {
+    "whatsapp": "+56900000000"
+  },
+  "pages": {
+    "home": {
+      "sections": [
+        {
+          "type": "hero",
+          "props": {
+            "title": "Mezclas de semillas formuladas por veterinarios",
+            "subtitle": "Alimento premium para tus aves, hecho en Chile y listo para pedir por WhatsApp"
+          }
+        },
+        {
+          "type": "product-grid",
+          "props": {
+            "title": "Nuestras mezclas",
+            "source": "featured",
+            "limit": 8
+          }
+        },
+        {
+          "type": "product-grid",
+          "props": {
+            "title": "Todo el catálogo",
+            "source": "all",
+            "limit": 24
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "title": "Cómo elegir tu mezcla",
+            "body": "Cada mezcla está pensada para un tipo de ave: pequeñas psitácidas, passeriformes, loros grandes o insectívoros.\nLas mezclas cubren entre el 40% y el 50% de la dieta; el resto es fruta, verdura y pellet.\nSi tienes dudas sobre qué darle a tu ave, escríbenos y te ayudamos."
+          }
+        },
+        {
+          "type": "text",
+          "props": {
+            "title": "Cómo pedir",
+            "body": "Elige tus productos, arma tu pedido y envíalo por WhatsApp.\nREEMPLAZAR: aquí van tus plazos y zonas de despacho y tus formas de pago."
+          }
+        },
+        {
+          "type": "whatsapp-cta",
+          "props": {
+            "label": "Pregúntanos por WhatsApp",
+            "message": "Hola, vi tu tienda y quiero consultar por una mezcla."
+          }
+        }
+      ]
+    }
+  },
+  "features": {
+    "showPrices": true,
+    "showStock": false,
+    "whatsappCheckout": true,
+    "paymentLinkCheckout": false,
+    "search": true
+  }
+}

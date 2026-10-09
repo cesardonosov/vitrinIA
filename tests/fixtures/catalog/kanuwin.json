@@ -1,0 +1,195 @@
+{
+  "store": "kanuwin",
+  "note": "Seed data para la primera tienda real. Precios: PVP sugerido con IVA, en CLP enteros, finales.",
+  "categories": [
+    {
+      "id": "cat-pequenas-psitacidas",
+      "name": "Pequeñas psitácidas",
+      "position": 0
+    },
+    {
+      "id": "cat-passeriformes",
+      "name": "Passeriformes",
+      "position": 1
+    },
+    {
+      "id": "cat-loros-grandes",
+      "name": "Loros grandes",
+      "position": 2
+    },
+    {
+      "id": "cat-insectivoros",
+      "name": "Insectívoros",
+      "position": 3
+    },
+    {
+      "id": "cat-snacks",
+      "name": "Snacks",
+      "position": 4
+    }
+  ],
+  "products": [
+    {
+      "slug": "mezcla-pequenas-psitacidas",
+      "name": "Mezcla Pequeñas Psitácidas",
+      "category": "cat-pequenas-psitacidas",
+      "featured": true,
+      "shortDescription": "Mezcla de 9 semillas para catitas, periquitos australianos, agapornis, cacatúas ninfa, Forpus y Pyrrhura.",
+      "species": "Catitas, periquitos australianos, agapornis, cacatúas ninfa, Forpus y Pyrrhura",
+      "bullets": [
+        "Mezcla de 9 semillas, con cáñamo (3%) y alforfón",
+        "Cubre el 40% de la dieta; complementa fruta, verdura y pellet",
+        "Apta para mascotas y reproductores"
+      ],
+      "nutrition": {
+        "per": "100 g",
+        "proteinG": 12.8,
+        "fatG": 8.9,
+        "kcal": 373
+      },
+      "variants": [
+        {
+          "label": "1,2 kg",
+          "priceClp": 8900,
+          "currency": "CLP"
+        },
+        {
+          "label": "600 g",
+          "priceClp": 4900,
+          "currency": "CLP"
+        }
+      ],
+      "image": {
+        "file": "mezcla-pequenas-psitacidas.png",
+        "provisional": false
+      },
+      "badge": "Producto estrella"
+    },
+    {
+      "slug": "mezcla-passeriformes",
+      "name": "Mezcla Passeriformes",
+      "category": "cat-passeriformes",
+      "featured": false,
+      "shortDescription": "Alpiste, avena pelada, mijos, linaza, alforfón y cáñamo para canarios, diamantes y otras aves pequeñas.",
+      "species": "Canarios, diamantes y otras aves pequeñas",
+      "bullets": [
+        "Alpiste, avena pelada, mijos, linaza, alforfón y cáñamo",
+        "Cubre el 40% de la dieta",
+        "Apta para mascotas y reproductores"
+      ],
+      "nutrition": {
+        "per": "100 g",
+        "proteinG": 12.8,
+        "fatG": 8.9,
+        "kcal": 373
+      },
+      "variants": [
+        {
+          "label": "1,2 kg",
+          "priceClp": 8900,
+          "currency": "CLP"
+        },
+        {
+          "label": "600 g",
+          "priceClp": 4900,
+          "currency": "CLP"
+        }
+      ],
+      "image": {
+        "file": "mezcla-passeriformes.png",
+        "provisional": false
+      }
+    },
+    {
+      "slug": "mezcla-loros-grandes",
+      "name": "Mezcla Loros Grandes",
+      "category": "cat-loros-grandes",
+      "featured": false,
+      "shortDescription": "Línea gourmet con frutas deshidratadas, nueces pecanas, almendras y maní para loros, guacamayos y cacatúas.",
+      "species": "Loros, guacamayos y cacatúas",
+      "bullets": [
+        "Frutas deshidratadas, nueces pecanas, almendras y maní",
+        "Fomenta el forrajeo",
+        "Cubre el 40% de la dieta"
+      ],
+      "nutrition": {
+        "per": "100 g",
+        "proteinG": 11.5,
+        "fatG": 15.6,
+        "kcal": 422
+      },
+      "variants": [
+        {
+          "label": "800 g",
+          "priceClp": 15500,
+          "currency": "CLP"
+        }
+      ],
+      "image": {
+        "file": "mezcla-loros-grandes.png",
+        "provisional": false
+      },
+      "badge": "Línea gourmet"
+    },
+    {
+      "slug": "mezcla-insectivoros",
+      "name": "Mezcla Insectívoros",
+      "category": "cat-insectivoros",
+      "featured": false,
+      "shortDescription": "Semillas enriquecidas con insectos para aves que combinan semillas, fruta, brotes e insectos.",
+      "species": "Aves que en la naturaleza combinan semillas, fruta, brotes e insectos",
+      "bullets": [
+        "Mezcla de semillas enriquecida con insectos",
+        "La proteína más alta de la línea",
+        "Cubre el 50% de la dieta del ave"
+      ],
+      "nutrition": {
+        "per": "100 g",
+        "proteinG": 14.0,
+        "fatG": 8.3,
+        "kcal": 369
+      },
+      "variants": [
+        {
+          "label": "Doypack 1,1 kg",
+          "priceClp": 10600,
+          "currency": "CLP"
+        }
+      ],
+      "image": {
+        "file": "mezcla-insectivoros-etiqueta-provisional.png",
+        "provisional": true
+      }
+    },
+    {
+      "slug": "snack-de-gusanos",
+      "name": "Snack de Gusanos",
+      "category": "cat-snacks",
+      "featured": false,
+      "shortDescription": "Tenebrios y larva de mosca soldado negra deshidratados, un premio proteico para aves granívoras e insectívoras.",
+      "species": "Aves granívoras e insectívoras",
+      "bullets": [
+        "Tenebrios y larva de mosca soldado negra deshidratados",
+        "Fuente de proteína, ácidos grasos, aminoácidos y minerales",
+        "Uso controlado: hasta 5% del peso corporal al día"
+      ],
+      "nutrition": {
+        "per": "100 g",
+        "proteinPercentTenebrio": 53,
+        "proteinPercentLarva": 48
+      },
+      "variants": [
+        {
+          "label": "200 g",
+          "priceClp": 9300,
+          "currency": "CLP"
+        }
+      ],
+      "image": {
+        "file": "snack-de-gusanos-provisional.png",
+        "provisional": true
+      },
+      "badge": "Snack proteico"
+    }
+  ]
+}
