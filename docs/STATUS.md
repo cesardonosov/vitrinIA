@@ -53,6 +53,9 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 13. Store Config (ADR-0004 v3, PR #55): ¿confirmas los desvíos? Páginas como `pages.home.sections[]`, Zod como adaptador, colores hex en minúsculas, solo fuentes de sistema, lectura tolerante por sección en la vitrina (Sprint 2), contraste de `primary` contra el fondo ≥ 3:1 y un color nuevo `onPrimary` (texto sobre botones) ≥ 4.5:1.
    A) Todos  B) Todos menos `onPrimary` (la vitrina elige blanco o negro sola)  C) Volver a la v2
    Recomiendo: A
+14. Mantenedor de tiendas para administradores: no está en los 4 sprints de la POC (el panel global es del piloto), pero la aprobación manual de tiendas lo necesita.
+   A) Mínimo en Sprint 3 (listar, aprobar, rechazar, suspender; rol admin revisado por Security)  B) Solo en el piloto  C) Adelantarlo al Sprint 2
+   Recomiendo: A
 
 ## Últimos cambios
 - 2026-10-08 · — · Cesar respondió pagos, datos del comprador, aviso, moderación y gasto en IA; retención propuesta en ADR-0010
