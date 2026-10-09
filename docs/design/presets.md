@@ -22,7 +22,7 @@ Orden de la home (6 secciones, máximo 7):
 5. `text` "Cómo pedir" (contiene la frase placeholder `REEMPLAZAR:` para plazos, zonas de despacho y formas de pago; no se conocen).
 6. `whatsapp-cta`.
 
-Contacto: `PLACEHOLDER_WHATSAPP` (no hay número real; lo pone el onboarding). Los datos de la persona de ventas del PDF no se copiaron a ningún lado.
+Contacto: el preset usa `PLACEHOLDER_WHATSAPP`, porque sirve a cualquier tienda del rubro. El número real de pedidos de Kanuwiñ está en el catálogo semilla (`tests/fixtures/catalog/kanuwin.json`, `contact.whatsapp`) y se aplica al crear la tienda. Los datos de la persona de ventas del PDF no se copiaron a ningún lado.
 
 ### Tema: oscuro
 
@@ -57,7 +57,6 @@ Los tres primeros los exige el validador y `aves.test.ts`; el cuarto lo verifica
 
 - **Componentes de vitrina** (Sprint 2): no existen todavía. Por eso no hay story `Presets/Aves` ni capturas 375/1280 (`create-preset` pasos 8 y 9), ni la revisión visual `visual-review`. Los criterios 2 de VIT-113 (Storybook a 375 px, sin scroll horizontal, WhatsApp visible) quedan **sin cumplir** hasta entonces.
 - **Fotos reales**: Insectívoros (solo hay una etiqueta/arte) y Snack de gusanos (solo una bolsa kraft genérica sin logo) usan imágenes provisorias. Faltan 2 de 5.
-- **Número de WhatsApp** real de la tienda.
 - **Plazos y formas de entrega y pago**: reemplazar la frase `REEMPLAZAR:` de "Cómo pedir" antes de publicar.
 - El link de Mercado Pago no se puede usar aún (allowlist vacía, decisión E1 de Cesar).
 - Imágenes en la tienda: el hero no lleva imagen (`imageId` requiere subida a ImageStorage, no hay).

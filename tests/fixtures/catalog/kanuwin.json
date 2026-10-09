@@ -1,6 +1,16 @@
 {
   "store": "kanuwin",
   "note": "Seed data para la primera tienda real. Precios: PVP sugerido con IVA, en CLP enteros, finales.",
+  "contact": {
+    "whatsapp": "+56933089103",
+    "deliveryTerms": null,
+    "paymentMethods": null
+  },
+  "pending": [
+    "deliveryTerms: zonas y costo de despacho (pendiente de Cesar)",
+    "paymentMethods: Mercado Pago, Flow o transferencia (pendiente de Cesar)",
+    "Fotos reales de Mezcla Insectívoros y Snack de gusanos"
+  ],
   "categories": [
     {
       "id": "cat-pequenas-psitacidas",
