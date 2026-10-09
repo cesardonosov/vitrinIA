@@ -3,12 +3,42 @@
   "note": "Seed data para la primera tienda real. Precios: PVP sugerido con IVA, en CLP enteros, finales.",
   "contact": {
     "whatsapp": "+56933089103",
-    "deliveryTerms": null,
-    "paymentMethods": null
+    "deliveryTerms": {
+      "provisional": true,
+      "note": "Inventado a pedido de Cesar el 2026-10-09 para la demo. Reemplazar con las condiciones reales antes de vender.",
+      "zones": [
+        {
+          "name": "Región Metropolitana",
+          "priceClp": 3990,
+          "leadTime": "24 a 48 horas hábiles"
+        },
+        {
+          "name": "Resto de Chile (courier)",
+          "priceClp": 5990,
+          "leadTime": "2 a 5 días hábiles"
+        }
+      ],
+      "freeShippingFromClp": 40000,
+      "currency": "CLP"
+    },
+    "paymentMethods": {
+      "provisional": true,
+      "note": "Inventado a pedido de Cesar el 2026-10-09. El link de Mercado Pago y los datos de transferencia reales se cargan desde el portal.",
+      "methods": [
+        {
+          "type": "mercado_pago_link",
+          "url": null
+        },
+        {
+          "type": "bank_transfer",
+          "details": null
+        }
+      ]
+    }
   },
   "pending": [
-    "deliveryTerms: zonas y costo de despacho (pendiente de Cesar)",
-    "paymentMethods: Mercado Pago, Flow o transferencia (pendiente de Cesar)",
+    "Condiciones de despacho y pago son de demo (provisional: true); reemplazar por las reales",
+    "Link de Mercado Pago y datos de transferencia reales",
     "Fotos reales de Mezcla Insectívoros y Snack de gusanos"
   ],
   "categories": [
@@ -201,5 +231,6 @@
       },
       "badge": "Snack proteico"
     }
-  ]
+  ],
+  "howToOrderText": "Elige tus mezclas y envía tu pedido por WhatsApp. Despachamos en la Región Metropolitana en 24 a 48 horas hábiles ($3.990) y al resto de Chile por courier en 2 a 5 días hábiles ($5.990). Envío gratis sobre $40.000. Pagas con Mercado Pago o transferencia."
 }
