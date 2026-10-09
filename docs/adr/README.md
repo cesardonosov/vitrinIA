@@ -19,7 +19,7 @@ Registro de decisiones técnicas relevantes. Cómo escribir uno: skill `write-ad
 | [0006](0006-analitica-first-party.md) | Analítica first-party de vitrinas | Propuesto | 2026-10-08 | Sí | Threat-model (datos personales) |
 | [0007](0007-equipo-de-9-agentes.md) | Equipo de 9 agentes con flujo y guardrails | Propuesto | 2026-10-08 | Sí (aprobado 2026-10-07; Security pidió cambios, incorporados; falta re-verificación) | Threat-model (secretos, infra) |
 | [0008](0008-reglas-de-dependencia-con-dependency-cruiser.md) | Reglas de dependencia verificadas con dependency-cruiser | Aceptado | 2026-10-08 | No requerida | No (apoya G6 del threat model de tenancy) |
-| [0009](0009-deny-de-lectura-de-secretos-para-agentes.md) | Negar a los agentes la lectura de `.env.keys` y `.env*` (ampliación de `deny` en `.claude/settings.json`) | Propuesto | 2026-10-08 | Sí (archivo protegido; pendiente) | Revisión de Security (secretos) + prueba documentada tras aplicar |
+| [0009](0009-deny-de-lectura-de-secretos-para-agentes.md) | Negar a los agentes la lectura de `.env.keys` y `.env*` (ampliación de `deny` en `.claude/settings.json`) | Propuesto | 2026-10-08 | Sí (aprobado 2026-10-09, opción A; aplicado en VIT-116, rama `feat/VIT-116-deny-secrets`; pendiente veredicto de Security para Aceptado) | Revisión de Security (secretos) + prueba documentada del punto 5 tras mezclar |
 | [0010](0010-retencion-de-datos.md) | Plazos de retención de pedidos, compradores, eventos y logs | Propuesto | 2026-10-08 | Sí (aprobado 2026-10-08) | Revisión de Security (datos personales) |
 
 Relacionado: `docs/pre-mortem-2026-10-08.md` (riesgos altos T1, T2, T3, S1, P3, P5 y C1 apuntan a estos ADRs).
