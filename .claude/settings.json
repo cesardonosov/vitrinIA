@@ -43,7 +43,13 @@
       "Bash(*< .env*)",
       "Bash(*<.env*)",
       "Bash(source .env*)",
-      "Bash(. .env*)"
+      "Bash(. .env*)",
+      "Bash(*dotenvx keypair*)",
+      "Bash(*/.env)",
+      "Bash(*/.env *)",
+      "Bash(*/.env.local*)",
+      "Bash(*/.env.test*)",
+      "Bash(*/.env.*.local*)"
     ],
     "ask": [
       "Bash(git push*)",
