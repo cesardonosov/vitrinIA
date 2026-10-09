@@ -7,6 +7,7 @@ import {
   MIGRATIONS,
   OLDEST_SUPPORTED_SCHEMA_VERSION,
 } from "../../domain/migrations/migrate-to-current";
+import { AVES_PRESET } from "../../domain/presets/aves";
 import { ROPA_PRESET } from "../../domain/presets/ropa";
 import { STORE_CONFIG_SCHEMA_VERSION } from "../../domain/store-config";
 import { zodStoreConfigValidator } from "./zod-store-config-validator";
@@ -81,5 +82,11 @@ describe("store-config fixtures", () => {
     const fixture = fixturesOf(1).find((f) => f.name === "v1/ropa.json");
     expect(fixture).toBeDefined();
     expect(fixture?.data).toEqual(JSON.parse(JSON.stringify(ROPA_PRESET)));
+  });
+
+  it("v1/aves.json is the JSON form of AVES_PRESET", () => {
+    const fixture = fixturesOf(1).find((f) => f.name === "v1/aves.json");
+    expect(fixture).toBeDefined();
+    expect(fixture?.data).toEqual(JSON.parse(JSON.stringify(AVES_PRESET)));
   });
 });
