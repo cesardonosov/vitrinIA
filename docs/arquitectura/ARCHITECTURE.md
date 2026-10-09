@@ -7,7 +7,8 @@ Fuente de las definiciones: [`VITRINIA.md`](../VITRINIA.md) §6–§8. Este docu
 - Una sola app Next.js (App Router) en TypeScript `strict`. Monolito modular con Clean Architecture completa en todos los módulos (ADR-0001).
 - Capas por módulo: `domain` → `application` → `infrastructure` / `presentation`. Las dependencias apuntan hacia adentro; el dominio no importa nada externo.
 - Multi-tenant por host con triple aislamiento (ADR-0003). Todo caso de uso recibe un `StoreId` del shared kernel.
-- Composition root: `src/infra/container.ts` (pendiente; lo crea el módulo que primero lo necesite).
+- Composition root: `src/infra/container.ts` (pendiente; lo crea el módulo que primero lo necesite). Es el único archivo que puede importar `infrastructure/` de varios módulos (§3.2).
+- La regla de dependencia la verifica una máquina, no una convención: `pnpm arch` (dependency-cruiser, §3) falla en cuanto un import cruza una capa o un módulo.
 
 ```mermaid
 flowchart LR
@@ -92,5 +93,98 @@ Decisiones (VITRINIA.md §7, pre-mortem: "diseñar Money con float"):
 ### 2.6 Verificación
 
 - Tests colocados junto al código (`*.test.ts`) con Vitest; `pnpm test` y `pnpm test:coverage`.
-- Umbral de cobertura del 90 % (líneas, ramas, funciones, sentencias) sobre `src/shared/kernel/**` y `src/modules/**/{domain,application}/**` (lo demás de `src/shared/` se incorporará cuando exista y tenga dueño), configurado en `vitest.config.mts`. El kernel está al 100 %.
-- La regla "el kernel no importa nada externo" la verificará dependency-cruiser (VIT-103); hasta entonces se comprueba con `grep -rn "from \"" src/shared/kernel`.
+- Umbral de cobertura del 90 % (líneas, ramas, funciones, sentencias) sobre `src/shared/**` y `src/modules/**/{domain,application}/**`, configurado en `vitest.config.mts`. El kernel está al 100 %.
+- La regla "el kernel no importa nada externo" la verifica dependency-cruiser (`kernel-is-self-contained`, §3.2).
+
+## 3. Reglas de dependencia (`pnpm arch`)
+
+Herramienta: [dependency-cruiser](https://github.com/sverweij/dependency-cruiser), configurada en `.dependency-cruiser.cjs` (ADR-0008). Lee los imports de `src/` con el compilador de TypeScript (`tsPreCompilationDeps: true`, por eso TypeScript está fijado a `6.0.3`), así que **los imports solo de tipos también cuentan**: `import type { z } from "zod"` en `domain/` es una violación. Los archivos `*.test.ts` quedan fuera del análisis (pueden importar Vitest); lo demás, incluido `src/app/` y `src/middleware.ts`, se analiza entero.
+
+| Comando | Qué hace | Resultado esperado |
+|---|---|---|
+| `pnpm arch` | Analiza `src/` con todas las reglas | Código 0 y `no dependency violations found`. Es lo que ejecuta CI (VIT-105). |
+| `pnpm arch:fixtures` | Analiza el árbol falso `tests/arch-fixtures/` | Código distinto de 0: lista una violación por regla. |
+| `pnpm test` | Incluye `tests/arch/rules.test.ts` | Afirma que cada regla tiene un fixture que la dispara y que `src/` está limpio. |
+| `pnpm arch:graph` | Regenera [`dependencias.mmd`](dependencias.mmd) (Mermaid) | Se commitea junto con cambios de estructura. |
+
+Al fallar, la salida nombra la regla, el archivo origen y el destino:
+
+```
+error domain-is-pure: src/modules/catalog/domain/product.ts → drizzle-orm
+```
+
+Todas las reglas tienen `severity: "error"`. **No existe `warn`**: una regla que no bloquea no protege nada.
+
+### 3.1 Mapa de quién puede importar a quién
+
+| Desde ↓ / hacia → | `domain/` propio | `application/` propio | `infrastructure/` propio | `presentation/` propio | otro módulo | `shared/kernel` | `src/infra/container.ts` | resto de `src/infra/` | paquetes npm / `node:*` |
+|---|---|---|---|---|---|---|---|---|---|
+| `domain/` | sí | no | no | no | no | sí | no | no | **no** |
+| `application/` | sí | sí | no | no | solo `application/index.ts` | sí | no | no | **no** |
+| `infrastructure/` | sí | sí | sí | no | solo `application/index.ts` | sí | no | sí (`db/with-store-tx`, nunca `db/client`) | sí |
+| `presentation/` | sí | sí | no | sí | solo `application/index.ts` | sí | sí | no | sí |
+| `src/app/` | no | sí | no | sí | — | sí | sí | no | sí |
+| `src/shared/` | — | — | — | — | no | sí | no | no | kernel: no; resto: sí |
+| `src/infra/` | — | sí (`container.ts` cablea casos de uso) | sí (solo `container.ts`) | — | — | sí | sí | sí | sí |
+
+### 3.2 Las reglas, una por una
+
+Cada nombre es el que aparece en la salida de `pnpm arch` y en `.dependency-cruiser.cjs`. Entre paréntesis, el fixture que la demuestra en `tests/arch-fixtures/src/`.
+
+**Capas (VITRINIA.md §6.2)**
+
+- `domain-is-pure` — `domain/` solo importa su propio `domain/` y `src/shared/kernel`. Nada de npm, nada de `node:*`, nada de `application/`. Es la regla que hace que una entidad se pueda testear sin levantar nada (`modules/catalog/domain/violates-domain-is-pure-*.ts`: Drizzle, tipo de Next, application).
+- `application-only-domain-and-kernel` — `application/` (casos de uso y puertos) solo importa su `application/`, su `domain/`, el kernel y el `application/index.ts` de otros módulos. Un caso de uso que necesita UUIDs, reloj o red define un puerto; el adaptador va en `infrastructure/` (`modules/catalog/application/violates-application-*.ts`).
+- `presentation-not-to-infrastructure` — server actions, route handlers y tools MCP llaman casos de uso; obtienen los adaptadores ya cableados desde `src/infra/container.ts` (`modules/catalog/presentation/violates-presentation-infrastructure.ts`).
+- `infrastructure-not-to-presentation` — un adaptador implementa un puerto; nunca sabe quién lo llama (`modules/catalog/infrastructure/violates-infrastructure-presentation.ts`).
+
+**Entre módulos**
+
+- `no-cross-module-internals` — desde `src/modules/A/` solo se puede importar `src/modules/B/application/index.ts`. `domain/`, `infrastructure/`, `presentation/` y los archivos sueltos de `application/` de otro módulo son privados. Lo que otro módulo necesita se exporta desde el barrel (`modules/orders/*/violates-cross-module-*.ts`: infrastructure, domain y un caso de uso suelto).
+
+**Shared kernel (§2)**
+
+- `kernel-is-self-contained` — `src/shared/kernel/` no importa nada fuera de su carpeta: ni paquetes, ni `node:*`, ni módulos (`shared/kernel/violates-kernel-*.ts`).
+- `shared-not-to-app-code` — nada en `src/shared/` importa `src/modules/`, `src/infra/` ni `src/app/`. Si algo "compartido" necesita un módulo, no es compartido: es de ese módulo (`shared/utils/violates-shared-to-infra.ts`).
+
+**Composition root y Next.js**
+
+- `infrastructure-only-wired-in-container` — el `infrastructure/` de un módulo lo importa su propio `infrastructure/` o `src/infra/container.ts`. Nadie más instancia adaptadores (`app/(portal)/violates-app-infrastructure.ts`).
+- `app-only-presentation-and-application` — `src/app/` (rutas y layouts; `middleware.ts` vive en la raíz de `src/`) importa `presentation/` y `application/`; nunca `domain/` ni `infrastructure/` (`app/(portal)/violates-app-domain.ts`).
+- `platform-infra-only-from-adapters` — `src/infra/` (cliente de base de datos, `withStoreTx`, adaptadores de plataforma) solo es alcanzable desde `infrastructure/` de módulos y desde el propio `src/infra/`. La única excepción es `src/infra/container.ts`, que `presentation/` y `src/app/` pueden importar para obtener los casos de uso cableados; y los puntos de entrada de Next.js en la raíz de `src/` (`instrumentation.ts`, `middleware.ts`, `proxy.ts`), que arrancan el proceso y pueden importar código de plataforma como `src/infra/env.ts` o `src/infra/security/`, pero no la base de datos (eso lo sigue bloqueando `drizzle-only-in-infrastructure`; control positivo `src/instrumentation.ts`) (`modules/catalog/presentation/violates-platform-infra-from-presentation.ts`).
+
+**Tenancy (ADR-0003 §4; threat model de tenancy C3 y brecha G6)**
+
+- `drizzle-only-in-infrastructure` — `drizzle-orm`, el driver (`postgres` / `pg`) y `src/infra/db/` solo se importan desde `infrastructure/` de un módulo o desde `src/infra/`. Un caso de uso, una server action o una ruta que toque la base de datos directamente se salta `withStoreTx` y por tanto el `SET LOCAL app.store_id`: RLS devolvería cero filas o, peor, se consultaría sin contexto de tienda (`modules/catalog/domain/violates-domain-is-pure-drizzle.ts`, `modules/catalog/application/violates-drizzle-in-application.ts`, `app/(portal)/violates-drizzle-in-app.ts`).
+- `db-client-only-via-with-store-tx` — la conexión cruda `src/infra/db/client.ts` es privada de `src/infra/db/`: solo `withStoreTx` (y las migraciones, que corren fuera de `src/`) la ven. Los adaptadores reciben la transacción desde `withStoreTx(storeId, fn)` y nunca el cliente (`modules/catalog/infrastructure/violates-db-client-direct.ts`). Esta regla reserva las rutas `src/infra/db/client.ts` y `src/infra/db/with-store-tx.ts` para VIT-107.
+
+**Higiene**
+
+- `no-circular` — sin ciclos de imports, en ninguna capa (`modules/catalog/domain/violates-no-circular-{a,b}.ts`).
+- `not-to-unresolvable` — todo import resuelve (atrapa typos, alias rotos y paquetes no instalados) (`modules/catalog/infrastructure/violates-not-to-unresolvable.ts`).
+- `not-to-dev-dep` — el código de `src/` no importa `devDependencies` (`modules/catalog/infrastructure/violates-not-to-dev-dep.ts`).
+
+### 3.3 Qué pasa con los tests de arquitectura
+
+`tests/arch-fixtures/` es un árbol falso: una copia mínima de la estructura de `src/` con un archivo por violación y controles positivos (archivos correctos que no deben disparar nada). Está fuera de `src/`, excluido de `tsconfig.json` y de la cobertura; nada lo importa. Como las rutas de las reglas son relativas al directorio desde donde se ejecuta dependency-cruiser, el **mismo** `.dependency-cruiser.cjs` gobierna `src/` y los fixtures: no hay una configuración "de prueba" que pueda divergir de la real.
+
+`tests/arch/rules.test.ts` ejecuta la CLI sobre ambos árboles y afirma:
+
+1. que cada archivo `violates-*.ts` dispara la regla que dice violar, con severidad `error`;
+2. que el conjunto de reglas cubiertas por fixtures es **igual** al conjunto de reglas del config (una regla nueva sin fixture hace fallar la suite);
+3. que los controles positivos no disparan nada;
+4. que `src/` real termina con cero violaciones y código 0.
+
+### 3.4 Cómo agregar una regla
+
+1. Escribe primero el fixture que la viola en `tests/arch-fixtures/src/...` (nombre `violates-<regla>.ts`, un comentario diciendo qué viola) y, si aplica, un control positivo. Corre `pnpm arch:fixtures`: todavía no debe listar tu regla.
+2. Añade la regla a `forbidden` en `.dependency-cruiser.cjs` con `name` en kebab-case, `comment` de una línea (aparece en `--output-type err-long`) y `severity: "error"`. Las rutas son expresiones regulares relativas a la raíz (`^src/...`); `$1` en `to.path`/`to.pathNot` reutiliza el grupo capturado en `from.path` (así se dice "el mismo módulo").
+3. Agrega la entrada `archivo → [reglas]` en `EXPECTED` de `tests/arch/rules.test.ts`.
+4. `pnpm test` (la suite comprueba que config y fixtures coinciden) y `pnpm arch` (el repo real sigue limpio).
+5. Documenta la regla en §3.2 y, si cambia el mapa de §3.1, la tabla. Si la regla nace de una decisión, enlaza el ADR.
+
+Para **relajar** una regla (un `pathNot` nuevo) se exige comentario `VIT-xxx` junto a la excepción y un ADR si debilita la arquitectura. Nunca se baja a `warn` para destrabar un PR: si el diseño necesita esa dependencia, se abre un ADR; si no, se mueve la lógica al puerto correcto (skill `arch-rules`).
+
+### 3.5 Grafo de dependencias
+
+[`dependencias.mmd`](dependencias.mmd) se genera con `pnpm arch:graph` (solo `src/`, sin `node_modules`) y se regenera en cada PR que cambie la estructura de módulos. Hoy contiene el kernel y los puntos de entrada de Next.js; crecerá con el primer módulo (`store-config`, VIT-110).
