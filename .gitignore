@@ -1,0 +1,12 @@
+node_modules
+.next
+next-env.d.ts
+*.tsbuildinfo
+.env*
+!.env.example
+.env.keys
+infra/cloudflare/*.json
+coverage/
+*.log
+.DS_Store
+storybook-static
