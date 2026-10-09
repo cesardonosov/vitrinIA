@@ -1,8 +1,10 @@
 # ADR-0009: Negar a los agentes la lectura de `.env.keys` y de archivos `.env*` (ampliación de `deny` en `.claude/settings.json`)
 
-- Estado: Propuesto
+- Estado: Propuesto (aprobado por Cesar y aplicado; pasa a Aceptado cuando Security emita APROBADO y ejecute la matriz del punto 5)
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — modifica el archivo protegido `.claude/settings.json`, AGENTS.md §5)
+- Aprobación de Cesar: sí, 2026-10-09, opción A (alternativa 1: reglas `deny` y `ask` completas de los puntos 1 y 2, tal cual).
+- Aplicación: 2026-10-09, rama `feat/VIT-116-deny-secrets`, PR que solo toca `.claude/settings.json` y la documentación de este ADR (ver Historial).
 - Issue: VIT-116
 - Zona sensible: sí (secretos). Requiere `threat-model` o revisión explícita de Security **antes** de pasar a Aceptado, y la prueba documentada del punto 5 después de aplicarlo.
 - Relacionados: ADR-0007 (capa 1 de guardrails: "la capa 1 no se considera implementada hasta que VIT-116 esté mezclado"), pre-mortem de seguridad S6, threat model de tenancy A15, VIT-106 (barrera de secretos en repo y CI).
@@ -66,8 +68,16 @@ Bash: lectura de los archivos `.env*` **sin cifrar** por los lectores habituales
 "Bash(*< .env*)",
 "Bash(*<.env*)",
 "Bash(source .env*)",
-"Bash(. .env*)"
+"Bash(. .env*)",
+"Bash(*dotenvx keypair*)",
+"Bash(*/.env)",
+"Bash(*/.env *)",
+"Bash(*/.env.local*)",
+"Bash(*/.env.test*)",
+"Bash(*/.env.*.local*)"
 ```
+
+Las seis últimas (v3, pedidas por Security y aprobadas por Cesar el 2026-10-09) cierran dos huecos: `dotenvx keypair` invocado por un envoltorio (`pnpm dotenvx keypair`, `npx dotenvx keypair`, `./node_modules/.bin/dotenvx keypair`) y la lectura de `.env`, `.env.local` y `.env.test` con ruta absoluta o desde un subdirectorio (`cat /ruta/al/repo/.env.local`, `cat $PWD/.env.test`, `cat infra/.env.local`).
 
 Estas reglas cubren `cat`, `head`, `tail`, `less`, `more`, `sed`, `awk`, `grep`, `rg`, `cut`, `sort`, `strings`, `xxd`, `od`, `base64`, `cp`, `mv`, `tee`, `tar`, `zip`, `curl -d @`, etc., porque no dependen del nombre del lector sino del archivo como argumento. No se agrega `Bash(*.env*)` ni `Bash(* .env*)` genérico: bloquearían `grep process.env`, `cat .env.example` y `dotenvx set ... -f .env.production`.
 
@@ -116,6 +126,8 @@ Tras aplicar el cambio, Security ejecuta en una sesión de agente nueva la matri
 | `dotenvx get DATABASE_URL -f .env.production` · `dotenvx decrypt` | `dotenvx encrypt -f .env.production` (ask) |
 | `cp .env.keys /tmp/x` · `base64 .env.keys` · `xxd .env.local` | `env \| grep PATH` (ask) · `printenv HOME` (ask) |
 | `echo $DOTENV_PRIVATE_KEY_PRODUCTION` | `git status` · `git diff` · `ls -la` |
+| `pnpm dotenvx keypair` · `npx dotenvx keypair` · `./node_modules/.bin/dotenvx keypair` | `cat /ruta/al/repo/.env.example` (ask) · `cat /ruta/al/repo/src/infra/env.ts` |
+| `cat /ruta/al/repo/.env.local` · `cat $PWD/.env.test` · `cat infra/.env.local` · `head /ruta/al/repo/.env` | `dotenvx set NOMBRE valor -f /ruta/al/repo/.env.production` (ask) |
 
 La prueba falla si cualquier fila de la columna izquierda devuelve contenido del archivo, o si cualquier fila de la derecha queda denegada (señal de regla demasiado amplia: se corrige la regla y se repite la matriz).
 
@@ -151,7 +163,19 @@ La prueba falla si cualquier fila de la columna izquierda devuelve contenido del
 
 ## Pendiente para Aceptado
 
-- OK de Cesar (archivo protegido). Pregunta concreta: ¿aprueba las reglas del punto 1 y 2 tal cual, o prefiere la alternativa 2 (solo `.env.keys`) como primer paso?
-- Revisión de Security (zona sensible: secretos): validar la lista contra el flujo `env-secrets` y ampliar la matriz del punto 5 si falta un lector.
+- ~~OK de Cesar (archivo protegido).~~ Registrado: 2026-10-09, opción A (puntos 1 y 2 tal cual). Esa aprobación es la que exige AGENTS.md §5 para tocar `.claude/settings.json`.
+- **Revisión de Security (zona sensible: secretos)**: la primera revisión (head 633b425) fue VETO por dos hallazgos Medios (M1 `pnpm dotenvx keypair`, M2 rutas absolutas); corregidos en v3. Pendiente la re-revisión sobre el nuevo head. Hay una auto-revisión del Architect con la skill `security-review` en el Historial; **no sustituye** al veredicto de Security ni a la etiqueta `security-approved` que exige `security-gate` (ADR-0007 §2), porque `.claude/settings.json` está en las rutas sensibles.
+- **Prueba documentada del punto 5**: pendiente. Security la ejecuta en una sesión de agente nueva que cargue el `settings.json` ya mezclado y guarda la salida en `docs/security/verificaciones/VIT-116-deny-secretos.md`. La simulación del Historial es solo de patrones; no ejercita el motor de permisos.
 - Issue para DevOps (seguimiento, no bloquea): separación a nivel de sistema operativo o sandbox sin `.env.keys` (alternativa 4).
-- Quién aplica el cambio en `.claude/settings.json`: Cesar, o un agente con el ADR ya Aceptado y en un PR aparte que solo toque ese archivo.
+- ~~Quién aplica el cambio en `.claude/settings.json`.~~ Aplicado por el Architect en un PR aparte (VIT-116) que solo toca ese archivo y este ADR, con la aprobación de Cesar registrada arriba. Cesar mezcla el PR (capa 4 de ADR-0007).
+
+## Historial
+
+- 2026-10-08 · v1: propuesta; espera a Cesar.
+- 2026-10-09 · v2: Cesar aprueba la opción A. El Architect aplica las reglas de los puntos 1 y 2 en `.claude/settings.json` (rama `feat/VIT-116-deny-secrets`): 32 reglas `deny` y 10 reglas `ask`, agregadas al final de cada lista sin tocar las 14 existentes; JSON válido.
+  - **Verificación hecha (offline, sin motor de permisos):** script que extrae los bloques de código de este ADR y comprueba que `settings.json` = reglas previas + reglas del ADR, sin duplicados ni otras claves; y simulación de la matriz del punto 5 por coincidencia de glob (`*` = cualquier texto) sobre los patrones. Resultado: las 32 entradas de la columna izquierda caen en una regla `deny` (incluidas variantes `pnpm dotenvx get`, `npx @dotenvx/dotenvx decrypt`, `cat .env | head`, `cat .env.local; git status`) y ninguna de las 21 de la derecha cae en `deny` (`cat .env.example`, `dotenvx set`, `dotenvx encrypt`, `env | grep PATH`, `printenv HOME` quedan en `ask`; el resto en `allow`).
+  - **Lo que NO se verificó:** el motor de permisos de Claude Code. La sesión que aplicó el cambio no carga el `settings.json` de la rama, así que no se ejercitó ninguna denegación real. La prueba del punto 5 sigue pendiente y es de Security. Supuestos a confirmar en esa prueba: (a) `*` en medio del patrón `Bash(...)` se interpreta como comodín (el repo ya depende de ello en `Bash(*DROP DATABASE*)`); (b) `Read(**/.env.keys)` cubre subdirectorios; (c) un comando compuesto (`a && b`, `a | b`) se evalúa de modo que un `.env.local` en cualquier segmento quede denegado.
+  - **Falsos positivos confirmados por simulación (aceptados):** `ls -la .env.local`, `git check-ignore .env.keys`, `docker compose --env-file .env.local up` directo (usar `pnpm dev:up`).
+  - **Brecha menor detectada (Bajo, no bloquea):** `pnpm dotenvx set ... -f .env.production` cae en `ask` por `* .env.production*`, no por `dotenvx *`; `pnpm dotenvx set X -f .env.staging` igual (por `* .env.staging*`). Un `pnpm dotenvx set` sobre un archivo que no sea staging/production/example no pediría confirmación. Se deja documentado para el ADR que reemplace a este si DevOps adopta `pnpm dotenvx` en vez de `dotenvx`.
+  - **Auto-revisión del Architect con la skill `security-review` (no es la revisión de Security):** aplica solo la fila "Secretos" e "Infra" del checklist. Ningún secreto en el diff (solo nombres de archivo y de variable, sin valores); no se creó ni leyó ningún `.env*` real durante la aplicación; `gitleaks protect --staged` y el hook `block-plain-env-files` de lefthook corrieron en el commit; no cambia workflows, Dockerfile ni compose; precedencia `deny` > `ask` > `allow` respetada; reglas idénticas al texto del ADR (contrato con el punto 5). Resultado de la auto-revisión: sin hallazgos Críticos/Altos/Medios; un Bajo (brecha `pnpm dotenvx set`). **Pendiente el veredicto de Security.**
+- 2026-10-09 · v3: Security vetó v2 (M1: `dotenvx keypair` por envoltorio `pnpm`/`npx`; M2: `.env.local`, `.env.test` y `.env` legibles con ruta absoluta o subdirectorio). Cesar aprobó agregar las 6 reglas `deny` que pidió Security (decisión del 2026-10-09). Se agregaron al final del `deny` y al punto 1; la matriz del punto 5 suma las filas nuevas. Hallazgos Bajos aceptados sin cambio: `cp .env.example .env.local` y `docker compose --env-file .env.local ...` quedan denegados para agentes (son pasos humanos; DevOps aclara los runbooks), y la evasión por globs o comillas (`cat .env.l*`, `cat '.env.local'`) sigue reconocida en el punto 3.
