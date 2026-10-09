@@ -1,8 +1,8 @@
 # Estado de VitrinIA
-Actualizado: 2026-10-08 17:30 (America/Santiago)
+Actualizado: 2026-10-09 01:40 UTC (2026-10-08 22:40 en Santiago)
 
 ## Sprint actual
-Sprint 1 — Fundaciones y marca · cierre 2026-10-14 · 9/16 issues mergeados en main · plan aprobado por Cesar el 2026-10-07
+Sprint 1 — Fundaciones y marca · cierre 2026-10-14 · 11/16 issues mergeados en main (VIT-113 parcial) · plan aprobado por Cesar el 2026-10-07
 Demo: el proyecto levanta con un comando y pasa todas las barreras de CI.
 Plan: `docs/sprints/sprint-01.md`.
 
@@ -12,11 +12,10 @@ Mergeados en `main` el 2026-10-08 con el OK de Cesar: VIT-101 (#32), VIT-106 (#3
 - VIT-102 Shared kernel (architect) — PR #38, draft
 - VIT-103 Reglas de capas (architect) — PR #45, sobre #38
 - VIT-108 Threat model de tenancy (security) — PR #39, draft
-- VIT-111 Marca (designer) — Instantánea (ronda 2, camino 3), elegida por Cesar como provisoria; va dentro de #65
-- VIT-112 Design tokens y Storybook (designer) — PR #65, en re-review
-- VIT-113 Preset 1 (designer) — se hace con el catálogo real que trae Cesar (semillas para aves exóticas)
+- VIT-111 Marca y VIT-112 Design tokens (designer) — en main (#65); Instantánea como marca provisoria
+- VIT-113 Preset (designer) — preset `aves` y catálogo de Kanuwiñ en main (#70); falta la story y las capturas a 375 px, que esperan los componentes de vitrina del Sprint 2
 - VIT-114 Verificación de la demo (qa) — pendiente
-- VIT-116 Deny de secretos para agentes (architect) — ADR-0009 propuesto, espera a Cesar
+- VIT-116 Deny de secretos para agentes (architect) — aprobado por Cesar; aplicándose con revisión de Security
 
 ## Seguimientos por crear como issue
 La creación de estos issues desde la sesión fue denegada por un permiso; quedan aquí para no perderlos.
@@ -39,23 +38,17 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 5. Moderación: resuelta (2026-10-08). Aprobación manual antes de publicar; revisa Cesar.
 6. Gasto en IA: resuelta (2026-10-08). Tope de USD 100 al mes para el Claude del administrador. Las tiendas usan su propia IA vía MCP, así que VitrinIA no paga IA por tienda.
 7. Marca: resuelta. Instantánea como provisoria (2026-10-08).
-8. Riesgo residual R3 (threat model): en la POC, quien tenga credenciales de `migrator` o acceso al PC ve todas las tiendas.
-   A) Aceptarlo en la POC; rol de solo lectura auditado antes del piloto  B) Separar ambientes ya en Sprint 1
-   Recomiendo: A
-9. Next 16 depreca `middleware.ts` en favor de `proxy.ts` (VIT-135). Cambiarlo toca VITRINIA.md §6.4.
-   A) Mantener middleware.ts en la POC  B) Migrar con ADR en Sprint 2
-   Recomiendo: B
-10. Rubro de la primera tienda real: semillas para aves exóticas (Cesar trae el catálogo). El preset de ropa ya existe en Store Config v1.
-11. Acciones tuyas (no son decisiones): registrar vitrinia.cl y delegar DNS a Cloudflare antes del Sprint 2; crear el tablero de GitHub Projects (comandos en `docs/sprints/sprint-01.md`); aplicar el ruleset de `main` con los checks requeridos (13 pasos en `docs/runbooks/ci.md`, PR #53); instalar la app de Renovate.
-12. ADR-0009 (VIT-116): negar a los agentes la lectura de `.env.keys` y `.env` sin cifrar.
-   A) Reglas deny y ask completas  B) Solo `.env.keys` por ahora
-   Recomiendo: A
-13. Store Config (ADR-0004 v3, PR #55): ¿confirmas los desvíos? Páginas como `pages.home.sections[]`, Zod como adaptador, colores hex en minúsculas, solo fuentes de sistema, lectura tolerante por sección en la vitrina (Sprint 2), contraste de `primary` contra el fondo ≥ 3:1 y un color nuevo `onPrimary` (texto sobre botones) ≥ 4.5:1.
-   A) Todos  B) Todos menos `onPrimary` (la vitrina elige blanco o negro sola)  C) Volver a la v2
-   Recomiendo: A
+8. Riesgo residual R3: resuelta (2026-10-09). Se acepta en la POC; rol de solo lectura auditado antes del piloto.
+9. `middleware.ts` → `proxy.ts`: resuelta (2026-10-09). Se migra con ADR en el Sprint 2 (VIT-135); al aceptarse ese ADR se actualiza VITRINIA.md §6.4.
+10. Rubro de la primera tienda real: resuelta. Kanuwiñ, mezclas de semillas para aves; preset `aves` y catálogo semilla en main (#70). Despacho y pagos de demo, inventados a pedido de Cesar; faltan 2 fotos reales.
+11. Acciones tuyas (no son decisiones): crear el tablero de GitHub Projects (comandos en `docs/sprints/sprint-01.md`); aplicar el ruleset de `main` con los checks requeridos (13 pasos en `docs/runbooks/ci.md`); instalar la app de Renovate; delegar el DNS del dominio a Cloudflare antes del Sprint 2. Dominio: Cesar informó el 2026-10-09 que ya está registrado (escribió "vitrina.cl"; confirmar si es vitrinia.cl).
+12. ADR-0009 (VIT-116): resuelta (2026-10-09). Reglas deny y ask completas; se aplican en `.claude/settings.json` con revisión de Security.
+13. Store Config (ADR-0004 v3): resuelta (2026-10-09). Cesar confirmó todos los desvíos, incluido `onPrimary`.
 14. Mantenedor de tiendas para administradores: resuelta (2026-10-09). Queda en `docs/PENDIENTES.md` como desarrollo futuro, sin sprint asignado. Mientras no exista, las tiendas se aprueban a mano.
 
 ## Últimos cambios
+- 2026-10-09 · — · Cesar dijo "ok merge": #69 (decisiones de datos) y #70 (preset aves y catálogo Kanuwiñ) en main
+- 2026-10-09 · — · Cesar aprobó las recomendaciones de R3, proxy.ts en Sprint 2, ADR-0009 completo y desvíos de ADR-0004
 - 2026-10-09 · — · Mantenedor de tiendas para administradores anotado en PENDIENTES como desarrollo futuro
 - 2026-10-08 · — · Cesar respondió pagos, datos del comprador, aviso, moderación y gasto en IA; retención propuesta en ADR-0010
 - 2026-10-08 · VIT-113 · Catálogo de Kanuwiñ confirmado: vende directo, precios PVP definitivos, fichas correctas; el contacto de ventas del PDF no se publica

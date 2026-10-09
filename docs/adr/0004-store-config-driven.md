@@ -4,6 +4,7 @@
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — arquitectura fundamental: define qué es una tienda)
 - Aprobación de Cesar: sí, 2026-10-07 (plan del Sprint 1). Aprobación de Cesar registrada; revisión de Security pendiente de re-verificación (threat model `docs/security/threat-models/tenancy.md` §9 pidió cambios el 2026-10-08; incorporados en esta versión, a la espera de que Security los re-verifique y el ADR pase a Aceptado).
+- Desvíos de la v3 (páginas como `pages.home.sections[]`, Zod como adaptador, hex en minúsculas, solo fuentes de sistema, lectura tolerante por sección, `primary` ≥ 3:1 y `onPrimary` ≥ 4.5:1): confirmados por Cesar el 2026-10-09 (opción A).
 - Issue: VIT-110
 - Zona sensible: parcial. No está en la lista de §9.1, pero el contenido del vendedor se renderiza en vitrinas públicas y el MCP escribirá sobre él. Se pide a Security una revisión del render de URLs y textos (sin threat-model completo obligatorio)
 
