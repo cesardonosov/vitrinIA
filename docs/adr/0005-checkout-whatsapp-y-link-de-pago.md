@@ -3,7 +3,7 @@
 - Estado: Propuesto
 - Fecha: 2026-10-08
 - Decide: Cesar (aprobación requerida: sí — pagos y modelo de negocio)
-- Aprobación de Cesar: pendiente; espera sus respuestas sobre pagos y datos personales (STATUS.md).
+- Aprobación de Cesar: respondió pagos y datos del comprador el 2026-10-08 (puntos 4 y 5, versión 2 de este ADR); falta su OK al ADR completo.
 - Issue: VIT-127
 - Zona sensible: sí (pedidos, pagos, posibles datos personales del comprador) — requiere threat-model de Security antes de pasar a Aceptado
 
@@ -22,8 +22,16 @@ Usaremos **checkout sin manejo de fondos**: el carrito vive en el cliente y, al 
 1. El caso de uso `placeOrder` recibe solo `productId` y cantidad; **recalcula precios y nombres desde la BD** (nunca confía en el precio del cliente) y verifica que los productos sean de la tienda del host (ADR-0003).
 2. Guarda `orders` + `order_items` con snapshot (nombre, precio unitario, cantidad, `currency`, totales), canal (`whatsapp` | `payment_link`) y estado inicial `intent`. Los ítems son inmutables: `app_user` no tiene `UPDATE` ni `DELETE` sobre `order_items`.
 3. Clave de idempotencia generada en el cliente para evitar pedidos duplicados por doble clic; rate limit por IP y tienda.
-4. Devuelve `https://wa.me/<E.164>?text=...` con el detalle y un código corto del pedido, o el link de pago del vendedor (validado al guardarse en el Store Config: `https:` y dominios de Mercado Pago en lista permitida). El cliente navega en la misma pestaña (abrir ventanas después de un `await` lo bloquean navegadores móviles).
-5. **Sin datos del comprador** en la POC: el comprador se identifica ante el vendedor por WhatsApp, fuera de VitrinIA (pendiente de confirmar por Cesar, pre-mortem §Escalado 1).
+4. Devuelve `https://wa.me/<E.164>?text=...` con el detalle y un código corto del pedido, o el medio de pago elegido. El cliente navega en la misma pestaña (abrir ventanas después de un `await` lo bloquean navegadores móviles).
+   - **Medios de pago (Cesar, 2026-10-08: "pueden ser varias opciones")**: una tienda puede ofrecer varios a la vez. (a) Link de Mercado Pago, (b) link de Flow, (c) transferencia bancaria (banco, tipo y número de cuenta, titular, RUT y correo del vendedor, mostrados como texto). Los links se validan al guardarse en el Store Config: `https:` y hosts de Mercado Pago o Flow en lista permitida. Cambiar medios de pago solo desde el portal con re-verificación, nunca por MCP (recomendación C de STATUS, se mantiene salvo que Cesar diga otra cosa).
+   - Amplía `VITRINIA.md` §3.3 ("link de Mercado Pago"); al aceptarse este ADR se actualiza ese párrafo (archivo protegido).
+5. **Datos del comprador (Cesar, 2026-10-08: "todo lo necesario")**: el checkout pide lo que piden los comercios chilenos, minimizado por la Ley 21.719 y condicionado a la opción elegida:
+   - Siempre: nombre y teléfono (WhatsApp).
+   - Opcional: correo (resumen del pedido) y nota para el vendedor.
+   - Si elige despacho: región, comuna (selector en cascada), calle y número, depto o referencia. Si elige retiro: nada más.
+   - Si pide factura: RUT con validación módulo 11, razón social y giro. Nunca RUT por defecto.
+   - Nunca datos de tarjeta. Los datos del comprador viven en una tabla aparte (`order_contacts`) con RLS por tienda, fuera de eventos y logs.
+   - Plazos de retención en ADR-0010.
 6. El vendedor puede marcar el pedido como `confirmed` o `cancelled` desde el panel (Sprint 3). Se reportan dos métricas separadas: **GMV de intención** (todos los pedidos) y **GMV confirmado**.
 7. Se definen los puertos `PaymentGateway` y `webhook_inbox` solo como interfaces; no se implementan hasta su gatillo.
 
@@ -51,10 +59,10 @@ Usaremos **checkout sin manejo de fondos**: el carrito vive en el cliente y, al 
   - En desktop `wa.me` abre WhatsApp Web, con más fricción.
   - El link de pago del vendedor puede quedar desactualizado; VitrinIA no lo puede verificar.
 - Reversibilidad: **reversible**. Agregar pago integrado es un nuevo adaptador de `PaymentGateway` más un ADR.
-- Seguridad: precios recalculados en servidor, idempotencia, aislamiento por tienda y ausencia de PII del comprador reducen la superficie. El texto del mensaje de WhatsApp se construye con datos validados (sin inyección de URL).
+- Seguridad: precios recalculados en servidor, idempotencia y aislamiento por tienda reducen la superficie. Al guardar datos del comprador, los pedidos pasan a ser zona de datos personales: Security debe revisar `order_contacts`, su RLS y su borrado. El texto del mensaje de WhatsApp se construye con datos validados (sin inyección de URL).
 - OPEX: neutro (sin pasarelas ni webhooks).
 
 ## Pendiente para Aceptado
 
 - Threat-model de Security (pedidos públicos, idempotencia, link de pago, PII).
-- OK de Cesar (pagos y definición de métrica GMV).
+- OK de Cesar al ADR completo (definición de métrica GMV y lista de hosts permitidos).

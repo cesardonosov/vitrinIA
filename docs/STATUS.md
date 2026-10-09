@@ -1,5 +1,5 @@
 # Estado de VitrinIA
-Actualizado: 2026-10-08 07:30 (America/Santiago)
+Actualizado: 2026-10-08 17:30 (America/Santiago)
 
 ## Sprint actual
 Sprint 1 — Fundaciones y marca · cierre 2026-10-14 · 9/16 issues mergeados en main · plan aprobado por Cesar el 2026-10-07
@@ -24,29 +24,20 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 - Designer + Security (P3): decidir si los textos de la tienda admiten emojis con ZWJ, solo entre emojis (#66).
 - Builder (P2): cargar Gabarito y Albert Sans en el portal con `next/font` y aplicar `deriveTheme` al guardar el tema; depende de #68 (#65).
 - DevOps + Security (P3): agregar `build-storybook` y axe de las stories al CI (#65).
+- Builder + Security (P1, Sprint 2): tabla `order_contacts` con RLS por tienda, formulario de checkout por opción (despacho, retiro, factura) y job diario de retención (ADR-0005 y ADR-0010).
+- Builder (P2, Sprint 2): medios de pago múltiples en Store Config (Mercado Pago, Flow, transferencia) con lista de hosts permitidos (ADR-0005).
+- Orchestrator (P2, Sprint 3): estado "pendiente de aprobación" para tiendas nuevas y cola de moderación para Cesar.
 
 ## Bloqueos
 - ninguno
 
 ## Esperando a Cesar
-1. Pagos: ¿qué links de pago acepta una tienda?
-   A) Cualquier https  B) Solo hosts de Mercado Pago  C) B + cambio solo desde el portal con re-verificación, nunca por MCP
-   Recomiendo: C
-2. Datos personales: ¿qué guarda el pedido del comprador en la POC?
-   A) Nada (solo ítems, precios, total, canal)  B) Nombre y teléfono opcionales  C) Nombre, teléfono y dirección
-   Recomiendo: A
-3. Datos personales: ¿retención de eventos y logs?
-   A) Eventos 90 días  B) Eventos 13 meses sin PII, agregados indefinidos, logs 30 días  C) Todo indefinido
-   Recomiendo: B
-4. Datos personales: ¿aviso de privacidad y datos reales en demos?
-   A) Aviso mínimo antes del Sprint 3 y datos reales solo con permiso escrito  B) Sin aviso hasta el piloto, demos ficticias
-   Recomiendo: A
-5. ¿Moderación de tiendas nuevas en la POC?
-   A) Publicación automática tras verificar email + revisión posterior  B) Aprobación manual antes de publicar
-   Recomiendo: B mientras haya menos de 20 tiendas
-6. ¿Techo mensual de gasto en tokens de los agentes? (los USD 50 de OPEX no lo cubren)
-   A) Fijar un monto y medirlo en cada cierre  B) Sin techo por ahora
-   Recomiendo: A
+1. Pagos: resuelta (2026-10-08). Varias opciones por tienda: link de Mercado Pago, link de Flow y transferencia. Cambios solo desde el portal, nunca por MCP. En ADR-0005.
+2. Datos del comprador: resuelta (2026-10-08). "Todo lo necesario": nombre y teléfono siempre; correo opcional; dirección solo con despacho; RUT, razón social y giro solo con factura. En ADR-0005.
+3. Retención: resuelta (2026-10-08). Pedido 6 años y contacto del comprador anonimizado a los 24 meses; no existe un plazo legal de 5 años. En ADR-0010, falta revisión de Security.
+4. Aviso de privacidad: resuelta (2026-10-08). Borrador provisorio redactado por IA, no revisado por abogado, en un Claude Doc. No había skill legal disponible. Revisión de abogado antes del piloto público.
+5. Moderación: resuelta (2026-10-08). Aprobación manual antes de publicar; revisa Cesar.
+6. Gasto en IA: resuelta (2026-10-08). Tope de USD 100 al mes para el Claude del administrador. Las tiendas usan su propia IA vía MCP, así que VitrinIA no paga IA por tienda.
 7. Marca: resuelta. Instantánea como provisoria (2026-10-08).
 8. Riesgo residual R3 (threat model): en la POC, quien tenga credenciales de `migrator` o acceso al PC ve todas las tiendas.
    A) Aceptarlo en la POC; rol de solo lectura auditado antes del piloto  B) Separar ambientes ya en Sprint 1
@@ -62,8 +53,13 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 13. Store Config (ADR-0004 v3, PR #55): ¿confirmas los desvíos? Páginas como `pages.home.sections[]`, Zod como adaptador, colores hex en minúsculas, solo fuentes de sistema, lectura tolerante por sección en la vitrina (Sprint 2), contraste de `primary` contra el fondo ≥ 3:1 y un color nuevo `onPrimary` (texto sobre botones) ≥ 4.5:1.
    A) Todos  B) Todos menos `onPrimary` (la vitrina elige blanco o negro sola)  C) Volver a la v2
    Recomiendo: A
+14. Mantenedor de tiendas para administradores: resuelta (2026-10-09). Queda en `docs/PENDIENTES.md` como desarrollo futuro, sin sprint asignado. Mientras no exista, las tiendas se aprueban a mano.
 
 ## Últimos cambios
+- 2026-10-09 · — · Mantenedor de tiendas para administradores anotado en PENDIENTES como desarrollo futuro
+- 2026-10-08 · — · Cesar respondió pagos, datos del comprador, aviso, moderación y gasto en IA; retención propuesta en ADR-0010
+- 2026-10-08 · VIT-113 · Catálogo de Kanuwiñ confirmado: vende directo, precios PVP definitivos, fichas correctas; el contacto de ventas del PDF no se publica
+- 2026-10-08 · ADR-0010 · Cesar aprobó la retención: pedido 6 años, contacto del comprador 24 meses
 - 2026-10-08 · — · Cesar dijo "Mergea": 9 PRs en main; #55 reemplazado por #66 para que el CI corriera completo
 - 2026-10-08 · VIT-111 · Cesar eligió Instantánea (ronda 2, camino 3) como marca provisoria; tokens en PR #65
 - 2026-10-08 · VIT-113 · Primera tienda real: semillas para aves exóticas
