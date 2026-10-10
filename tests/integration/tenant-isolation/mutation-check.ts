@@ -77,7 +77,7 @@ const MUTATIONS: readonly Mutation[] = [
   {
     name: "drop the orders policy",
     criterion:
-      "#106 / C7: orders only has column-level UPDATE; removing its policy still fails naming the table",
+      "Issue 106 / C7: orders only has column-level UPDATE; removing its policy still fails naming the table",
     up: "drop policy orders_tenant on public.orders;",
     down: `create policy orders_tenant on public.orders as permissive for all to app_user
       using (${TENANT_PREDICATE("store_id")}) with check (${TENANT_PREDICATE("store_id")});`,
@@ -87,7 +87,7 @@ const MUTATIONS: readonly Mutation[] = [
   {
     name: "orders policy replaced by USING (true)",
     criterion:
-      "#106 / C5: the cross-tenant UPDATE on a column-level grant (orders.status) is exercised and catches a permissive policy",
+      "Issue 106 / C5: the cross-tenant UPDATE on a column-level grant (orders.status) is exercised and catches a permissive policy",
     up: `drop policy orders_tenant on public.orders;
       create policy orders_tenant on public.orders as permissive for all to app_user
       using (true) with check (true);`,
