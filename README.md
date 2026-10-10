@@ -85,4 +85,4 @@ Cada check de CI y cómo reproducirlo está en `docs/runbooks/ci.md`.
 
 ## Estructura
 
-`src/app/(portal)`, `src/app/(vitrina)`, `src/modules`, `src/shared`, `src/infra` y `src/middleware.ts` (por ahora solo pasa la petición). Detalle en `docs/VITRINIA.md` §6.4.
+`src/app/(portal)`, `src/app/(vitrina)`, `src/modules`, `src/shared`, `src/infra` y `src/proxy.ts` (pone el CSP y enruta por host: portal o vitrina, ADR-0011). Detalle en `docs/VITRINIA.md` §6.4.

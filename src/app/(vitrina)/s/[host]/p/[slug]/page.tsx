@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { storefrontDeps } from "@/infra/container";
 import { loadStorefrontProduct } from "@/modules/storefront/application";
 import {
@@ -13,14 +14,20 @@ interface Params {
   readonly params: Promise<{ host: string; slug: string }>;
 }
 
-async function load({ params }: Params) {
-  const { host, slug } = await params;
-  return loadStorefrontProduct(
+// One resolve_host() per request, shared by generateMetadata and the page.
+const loadProduct = cache(async (host: string, slug: string) =>
+  loadStorefrontProduct(
     storefrontDeps,
     (await headers()).get("host"),
     host,
-    decodeURIComponent(slug),
-  );
+    // Next already decodes params; decoding again would throw on "%25".
+    slug,
+  ),
+);
+
+async function load({ params }: Params) {
+  const { host, slug } = await params;
+  return loadProduct(host, slug);
 }
 
 export async function generateMetadata(props: Params): Promise<Metadata> {

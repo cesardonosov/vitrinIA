@@ -17,10 +17,13 @@ import {
  * Routing (VIT-137): portal hosts get the app as is; any other host is
  * rewritten into `/s/<host>/...`, where the page resolves the store again
  * from its own Host header (ADR-0003 §2). Unknown hosts end in a 404 there.
- * Paths with a file extension (public assets) and /api are never rewritten.
+ * Paths with a file extension (public assets) are never rewritten. Only the
+ * API routes listed in STOREFRONT_API_ROUTES answer on store hosts; any other
+ * /api path there is a 404 (threat model A10/C13: auth stays on the portal).
  */
 const STOREFRONT_PREFIX = `/${STOREFRONT_SEGMENT}/`;
 const PUBLIC_FILE = /\.[a-z0-9]+$/i;
+const STOREFRONT_API_ROUTES: ReadonlySet<string> = new Set(["/api/csp-report"]);
 
 function route(
   request: NextRequest,
@@ -34,10 +37,12 @@ function route(
   ) {
     return "not-found";
   }
-  if (pathname.startsWith("/api/") || PUBLIC_FILE.test(pathname))
-    return undefined;
   if (host === undefined) return "not-found";
   if (isPortalHost(host)) return undefined;
+  if (pathname === "/api" || pathname.startsWith("/api/")) {
+    return STOREFRONT_API_ROUTES.has(pathname) ? undefined : "not-found";
+  }
+  if (PUBLIC_FILE.test(pathname)) return undefined;
   const url = request.nextUrl.clone();
   url.pathname = `${STOREFRONT_PREFIX}${host}${pathname === "/" ? "" : pathname}`;
   return url;

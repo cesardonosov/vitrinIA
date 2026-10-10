@@ -98,7 +98,7 @@ Decisiones (VITRINIA.md §7, pre-mortem: "diseñar Money con float"):
 
 ## 3. Reglas de dependencia (`pnpm arch`)
 
-Herramienta: [dependency-cruiser](https://github.com/sverweij/dependency-cruiser), configurada en `.dependency-cruiser.cjs` (ADR-0008). Lee los imports de `src/` con el compilador de TypeScript (`tsPreCompilationDeps: true`, por eso TypeScript está fijado a `6.0.3`), así que **los imports solo de tipos también cuentan**: `import type { z } from "zod"` en `domain/` es una violación. Los archivos `*.test.ts` quedan fuera del análisis (pueden importar Vitest); lo demás, incluido `src/app/` y `src/middleware.ts`, se analiza entero.
+Herramienta: [dependency-cruiser](https://github.com/sverweij/dependency-cruiser), configurada en `.dependency-cruiser.cjs` (ADR-0008). Lee los imports de `src/` con el compilador de TypeScript (`tsPreCompilationDeps: true`, por eso TypeScript está fijado a `6.0.3`), así que **los imports solo de tipos también cuentan**: `import type { z } from "zod"` en `domain/` es una violación. Los archivos `*.test.ts` quedan fuera del análisis (pueden importar Vitest); lo demás, incluido `src/app/` y `src/proxy.ts`, se analiza entero.
 
 | Comando | Qué hace | Resultado esperado |
 |---|---|---|
@@ -150,7 +150,7 @@ Cada nombre es el que aparece en la salida de `pnpm arch` y en `.dependency-crui
 **Composition root y Next.js**
 
 - `infrastructure-only-wired-in-container` — el `infrastructure/` de un módulo lo importa su propio `infrastructure/` o `src/infra/container.ts`. Nadie más instancia adaptadores (`app/(portal)/violates-app-infrastructure.ts`).
-- `app-only-presentation-and-application` — `src/app/` (rutas y layouts; `middleware.ts` vive en la raíz de `src/`) importa `presentation/` y `application/`; nunca `domain/` ni `infrastructure/` (`app/(portal)/violates-app-domain.ts`).
+- `app-only-presentation-and-application` — `src/app/` (rutas y layouts; `proxy.ts` vive en la raíz de `src/`) importa `presentation/` y `application/`; nunca `domain/` ni `infrastructure/` (`app/(portal)/violates-app-domain.ts`).
 - `platform-infra-only-from-adapters` — `src/infra/` (cliente de base de datos, `withStoreTx`, adaptadores de plataforma) solo es alcanzable desde `infrastructure/` de módulos y desde el propio `src/infra/`. La única excepción es `src/infra/container.ts`, que `presentation/` y `src/app/` pueden importar para obtener los casos de uso cableados; y los puntos de entrada de Next.js en la raíz de `src/` (`instrumentation.ts`, `middleware.ts`, `proxy.ts`), que arrancan el proceso y pueden importar código de plataforma como `src/infra/env.ts` o `src/infra/security/`, pero no la base de datos (eso lo sigue bloqueando `drizzle-only-in-infrastructure`; control positivo `src/instrumentation.ts`) (`modules/catalog/presentation/violates-platform-infra-from-presentation.ts`).
 
 **Tenancy (ADR-0003 §4; threat model de tenancy C3 y brecha G6)**

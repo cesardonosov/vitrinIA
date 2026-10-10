@@ -35,11 +35,31 @@ describe("proxy routing by host (VIT-137)", () => {
     expect(call("kanuwin.localhost", "/s").status).toBe(404);
   });
 
-  it("public files and /api are not rewritten on store hosts", () => {
+  it("public files and the allowlisted API routes are not rewritten on store hosts", () => {
     expect(
       rewriteOf(call("kanuwin.localhost", "/demo/kanuwin/a.webp")),
     ).toBeNull();
-    expect(rewriteOf(call("kanuwin.localhost", "/api/csp-report"))).toBeNull();
+    const csp = call("kanuwin.localhost", "/api/csp-report");
+    expect(csp.status).toBe(200);
+    expect(rewriteOf(csp)).toBeNull();
+  });
+
+  it("other API routes 404 on store hosts but not on the portal", () => {
+    expect(call("kanuwin.localhost", "/api/auth/session").status).toBe(404);
+    expect(call("kanuwin.localhost", "/api").status).toBe(404);
+    expect(call("localhost:3000", "/api/auth/session").status).toBe(200);
+  });
+
+  it("encoded or uppercase variants of the segment stay inside the store's own segment", () => {
+    for (const path of [
+      "/%73/otra.localhost/p/x",
+      "/S/otra.localhost/p/x",
+      "/s%2Fotra.localhost%2Fp%2Fx",
+    ]) {
+      expect(rewriteOf(call("kanuwin.localhost", path))).toMatch(
+        /^http:\/\/kanuwin\.localhost\/s\/kanuwin\.localhost\//,
+      );
+    }
   });
 
   it("a malformed host is a 404", () => {
