@@ -9,7 +9,7 @@ export PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers   # o el caché por defecto de 
 pnpm test:e2e
 ```
 
-- `tests/e2e/global-setup.ts` siembra tienda y catálogo demo (`infra/seed/demo.sql` y `demo-catalog.sql`) con `psql` como `app_user`; es idempotente.
+- `tests/e2e/global-setup.ts` siembra tienda y catálogo demo (`infra/seed/demo.sql`, `demo-catalog.sql` y `demo-config.sql`) con `psql` como `app_user`; es idempotente.
 - La app corre con `next dev` en el puerto 3100 y se visita como `kanuwin.localhost:3100`.
 - Cloudflare no es alcanzable desde los tests: el script del widget se reemplaza en el navegador (`page.route`) y el servidor verifica contra `tests/e2e/fake-siteverify.mjs` mediante `TURNSTILE_VERIFY_URL` (variable prohibida en staging y production). La verificación del servidor sí se ejecuta.
 - El límite de 5 pedidos / 10 min por IP y tienda vive en memoria del servidor: si repites la suite varias veces seguidas con el mismo servidor, el 6.º pedido recibe 429. Reinicia el servidor.
