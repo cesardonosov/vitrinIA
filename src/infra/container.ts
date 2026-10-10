@@ -8,7 +8,11 @@ import { createTurnstileVerifier } from "@/modules/orders/infrastructure/turnsti
 import type { StoreConfig } from "@/modules/store-config/application";
 import { createDbStoreConfigReader } from "@/modules/store-config/infrastructure/db-store-config-reader";
 import { zodStoreConfigValidator } from "@/modules/store-config/infrastructure/zod/zod-store-config-validator";
-import type { StorefrontDeps } from "@/modules/storefront/application";
+import type {
+  StorefrontDeps,
+  StoreHostCache,
+} from "@/modules/storefront/application";
+import { createCachedHostResolver } from "@/modules/storefront/infrastructure/cached-store-host-resolver";
 import { dbStoreHostResolver } from "@/modules/storefront/infrastructure/db-store-host-resolver";
 import { withStoreTx } from "./db/with-store-tx";
 import { getEnv } from "./env";
@@ -45,15 +49,23 @@ const configs = createDbStoreConfigReader({
     }),
 });
 
+/**
+ * Host → store with an in-memory cache (VIT-192, ADR-0003 §1): TTL <= 60 s, bounded,
+ * per process. Use cases that rename, unpublish, verify or reassign a domain receive
+ * `storeHostCache` and invalidate it after committing (see StoreHostCache).
+ */
+const hostResolver = createCachedHostResolver(dbStoreHostResolver);
+export const storeHostCache: StoreHostCache = hostResolver;
+
 export const storefrontDeps: StorefrontDeps = {
-  hosts: dbStoreHostResolver,
+  hosts: hostResolver,
   configs,
   catalog: catalogReader,
 };
 
 /** Checkout (VIT-186). The verifier and its keys are read per request, never at import. */
 export const ordersDeps: PlaceOrderDeps = {
-  hosts: dbStoreHostResolver,
+  hosts: hostResolver,
   configs,
   catalog: catalogReader,
   orders: createDbOrderRepository({ withStoreTx, newCode: newOrderCode }),

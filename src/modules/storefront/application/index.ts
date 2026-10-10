@@ -11,4 +11,5 @@ export {
   type Storefront,
   type StorefrontDeps,
 } from "./load-storefront";
+export type { StoreHostCache } from "./ports/store-host-cache";
 export type { StoreHostResolver } from "./ports/store-host-resolver";
