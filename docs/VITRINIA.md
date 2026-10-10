@@ -188,7 +188,7 @@ vitrinia/
 │   ├── modules/
 │   ├── shared/
 │   ├── infra/
-│   └── middleware.ts
+│   └── proxy.ts          (ADR-0011; antes middleware.ts)
 ├── worker/
 ├── tests/{e2e,integration}/
 ├── drizzle/migrations/
@@ -269,7 +269,7 @@ Cada evento: `event_id` (UUID v7), `store_id`, `occurred_at`, `visitor_id` anón
 ### 8.1 Aislamiento de tiendas (triple capa)
 
 1. **RLS** con rol `app_user` sin `BYPASSRLS`; `SET LOCAL app.store_id` por transacción.
-2. **Cada caso de uso** verifica `StoreId` contra la sesión. El middleware solo resuelve el host; **nunca es barrera de seguridad**.
+2. **Cada caso de uso** verifica `StoreId` contra la sesión. El proxy (antes middleware, ADR-0011) solo resuelve el host; **nunca es barrera de seguridad**.
 3. **Tests automáticos** de cruce de tiendas en CI.
 
 ### 8.2 Controles

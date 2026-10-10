@@ -45,7 +45,15 @@ Levanta Postgres, Mailpit, app y worker (placeholder: aún no procesa jobs). **N
    pnpm dev:down                # detiene; los datos persisten en el volumen pgdata
    ```
 
-App en http://localhost:3000, correos en http://localhost:8025. Detalle, roles `migrator`/`app_user` y problemas comunes en `docs/runbooks/levantar-entorno-local.md`.
+App en http://localhost:3000, correos en http://localhost:8025.
+
+Tienda de demo (Kanuwiñ), después de `pnpm db:migrate:compose`:
+```bash
+pnpm db:seed:demo            # crea la tienda y su host local; se puede repetir
+```
+Y se abre en http://kanuwin.localhost:3000 (Chrome, Edge y Firefox resuelven `*.localhost` sin tocar nada).
+
+Detalle, roles `migrator`/`app_user` y problemas comunes en `docs/runbooks/levantar-entorno-local.md`.
 
 ## Scripts
 
@@ -70,6 +78,7 @@ Cada check de CI y cómo reproducirlo está en `docs/runbooks/ci.md`.
 | `pnpm test:tenant-isolation` / `pnpm test:tenant-isolation:mutations` | Arnés de cruce de tiendas y su mutation check |
 | `pnpm db:generate` / `pnpm db:migrate` | Genera migración con drizzle-kit / aplica migraciones (`DATABASE_URL`) |
 | `pnpm db:migrate:compose` | Aplica migraciones dentro de Docker (perfil `tools`) |
+| `pnpm db:seed:demo` | Crea la tienda de demo Kanuwiñ en `kanuwin.localhost:3000` (como `app_user`, idempotente; solo Docker local) |
 | `pnpm tokens:build` | Genera los tokens de diseño |
 | `pnpm storybook` / `pnpm build-storybook` | Storybook en :6006 / build estático |
 | `pnpm docs:store-config-schema` | Regenera `docs/arquitectura/store-config.schema.json` |
