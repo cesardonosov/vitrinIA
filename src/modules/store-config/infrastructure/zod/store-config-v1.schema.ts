@@ -10,6 +10,9 @@ import { FONT_IDS, RADIUS_IDS } from "../../domain/fonts";
 import { CHILEAN_MOBILE_E164_PATTERN } from "../../domain/phone";
 import {
   FEATURE_FLAGS,
+  MAX_DELIVERY_PRICE_CLP,
+  MAX_DELIVERY_ZONES,
+  MAX_FREE_SHIPPING_FROM_CLP,
   MAX_SECTIONS_PER_PAGE,
   PRODUCT_GRID_MAX_LIMIT,
   PRODUCT_GRID_SOURCES,
@@ -17,7 +20,11 @@ import {
   type StoreConfigV1,
 } from "../../domain/store-config";
 import { isBlankText, isPlainText, TEXT_LIMITS } from "../../domain/text";
-import { checkUrlForField, URL_MAX_LENGTH } from "../../domain/url-allowlist";
+import {
+  checkUrlForField,
+  URL_MAX_LENGTH,
+  type UrlField,
+} from "../../domain/url-allowlist";
 
 /**
  * Zod schema of Store Config v1 (ADR-0004 §1, issue VIT-110).
@@ -61,18 +68,21 @@ const whatsapp = z.string().regex(CHILEAN_MOBILE_E164_PATTERN, {
   message: "whatsapp must be a Chilean mobile in E.164 (+569XXXXXXXX)",
 });
 
-const paymentLink = z
-  .string()
-  .max(URL_MAX_LENGTH)
-  .superRefine((value, ctx) => {
-    const checked = checkUrlForField("contact.paymentLink", value);
-    if (!checked.ok) {
-      ctx.addIssue({
-        code: "custom",
-        message: `${checked.error.message} (${checked.error.reason})`,
-      });
-    }
-  });
+const allowlistedUrl = (field: UrlField) =>
+  z
+    .string()
+    .max(URL_MAX_LENGTH)
+    .superRefine((value, ctx) => {
+      const checked = checkUrlForField(field, value);
+      if (!checked.ok) {
+        ctx.addIssue({
+          code: "custom",
+          message: `${checked.error.message} (${checked.error.reason})`,
+        });
+      }
+    });
+
+const paymentLink = allowlistedUrl("contact.paymentLink");
 
 export const identitySchema = z.strictObject({
   name: plainText(TEXT_LIMITS.storeName),
@@ -178,6 +188,77 @@ export const pagesSchema = z.strictObject({
   home: pageSchema,
 });
 
+export const paymentMethodSchema = z.discriminatedUnion("type", [
+  z.strictObject({
+    type: z.literal("mercado-pago-link"),
+    url: allowlistedUrl("checkout.mercadoPagoLink"),
+  }),
+  z.strictObject({
+    type: z.literal("flow-link"),
+    url: allowlistedUrl("checkout.flowLink"),
+  }),
+  z.strictObject({
+    type: z.literal("bank-transfer"),
+    details: plainText(TEXT_LIMITS.paymentDetails),
+  }),
+]);
+
+const clpAmount = (max: number) => z.int().min(0).max(max);
+
+export const deliverySchema = z
+  .strictObject({
+    zones: z
+      .array(
+        z.strictObject({
+          name: plainText(TEXT_LIMITS.deliveryZoneName),
+          priceClp: clpAmount(MAX_DELIVERY_PRICE_CLP),
+          leadTime: optionalPlainText(TEXT_LIMITS.deliveryLeadTime),
+        }),
+      )
+      .max(MAX_DELIVERY_ZONES),
+    freeShippingFromClp: clpAmount(MAX_FREE_SHIPPING_FROM_CLP)
+      .min(1)
+      .optional(),
+    pickup: z
+      .strictObject({ details: plainText(TEXT_LIMITS.pickupDetails) })
+      .optional(),
+  })
+  .superRefine((delivery, ctx) => {
+    if (delivery.zones.length === 0 && delivery.pickup === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["zones"],
+        message: "offer at least one delivery zone or pickup",
+      });
+    }
+    const names = delivery.zones.map((zone) => zone.name.toLowerCase());
+    if (new Set(names).size !== names.length) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["zones"],
+        message: "delivery zone names must be unique",
+      });
+    }
+  });
+
+export const checkoutSchema = z.strictObject({
+  paymentMethods: z
+    .array(paymentMethodSchema)
+    .min(1)
+    .max(3)
+    .superRefine((methods, ctx) => {
+      const types = methods.map((method) => method.type);
+      if (new Set(types).size !== types.length) {
+        ctx.addIssue({
+          code: "custom",
+          message: "each payment method type may appear only once",
+        });
+      }
+    }),
+  delivery: deliverySchema,
+  invoice: z.boolean(),
+});
+
 const featureEntries = Object.fromEntries(
   FEATURE_FLAGS.map((flag) => [flag, z.boolean()]),
 ) as Record<(typeof FEATURE_FLAGS)[number], z.ZodBoolean>;
@@ -192,6 +273,7 @@ export const storeConfigV1Schema = z
     contact: contactSchema,
     pages: pagesSchema,
     features: featuresSchema,
+    checkout: checkoutSchema.optional(),
   })
   .meta({
     id: "StoreConfigV1",

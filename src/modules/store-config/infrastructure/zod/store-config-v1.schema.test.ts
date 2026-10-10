@@ -461,3 +461,179 @@ describe("StoreConfigV1 schema: sections and features", () => {
     expect(zodStoreConfigValidator.validate("{}").ok).toBe(false);
   });
 });
+
+describe("StoreConfigV1 schema: checkout (VIT-185)", () => {
+  const checkout = {
+    paymentMethods: [
+      { type: "mercado-pago-link", url: "https://mpago.la/2AbCdEf" },
+      { type: "flow-link", url: "https://www.flow.cl/btn.php?token=abc" },
+      { type: "bank-transfer", details: "Banco Estado, cuenta RUT 123" },
+    ],
+    delivery: {
+      zones: [{ name: "RM", priceClp: 3990, leadTime: "24 a 48 h" }],
+      freeShippingFromClp: 40000,
+      pickup: { details: "Retiro en Ñuñoa" },
+    },
+    invoice: true,
+  };
+  const withCheckout = (
+    mutate: (c: Record<string, unknown>) => void = () => {},
+  ) =>
+    withPatch((draft) => {
+      const copy = JSON.parse(JSON.stringify(checkout)) as Record<
+        string,
+        unknown
+      >;
+      mutate(copy);
+      draft.checkout = copy;
+    });
+
+  it("accepts the three payment methods, zones and pickup", () => {
+    expect(zodStoreConfigValidator.validate(withCheckout()).ok).toBe(true);
+  });
+
+  it("is optional: a config without checkout stays valid", () => {
+    expect(zodStoreConfigValidator.validate(withPatch(() => {})).ok).toBe(true);
+  });
+
+  it.each([
+    ["http://mpago.la/x", "scheme"],
+    ["https://mpago.la.evil.cl/x", "host"],
+    ["https://evil.cl/mpago.la", "host"],
+    ["https://user@mpago.la/x", "credentials"],
+    ["https://mpago.la:8443/x", "port"],
+    ["https://MPAGO.LA/x", "not-canonical"],
+    ["javascript:alert(1)", "scheme"],
+  ])("rejects the Mercado Pago link %s (%s)", (url) => {
+    const paths = pathsOf(
+      withCheckout((c) => {
+        c.paymentMethods = [{ type: "mercado-pago-link", url }];
+      }),
+    );
+    expect(paths).toContain("checkout.paymentMethods.0.url");
+  });
+
+  it("does not accept a Flow host for a Mercado Pago link or vice versa", () => {
+    const paths = pathsOf(
+      withCheckout((c) => {
+        c.paymentMethods = [
+          { type: "mercado-pago-link", url: "https://www.flow.cl/btn.php" },
+          { type: "flow-link", url: "https://mpago.la/x" },
+        ];
+      }),
+    );
+    expect(paths).toEqual([
+      "checkout.paymentMethods.0.url",
+      "checkout.paymentMethods.1.url",
+    ]);
+  });
+
+  it("requires 1 to 3 methods, each type once", () => {
+    expect(
+      pathsOf(
+        withCheckout((c) => {
+          c.paymentMethods = [];
+        }),
+      ),
+    ).toContain("checkout.paymentMethods");
+    expect(
+      pathsOf(
+        withCheckout((c) => {
+          c.paymentMethods = [
+            { type: "bank-transfer", details: "a" },
+            { type: "bank-transfer", details: "b" },
+          ];
+        }),
+      ),
+    ).toContain("checkout.paymentMethods");
+  });
+
+  it("keeps transfer details as plain text with a limit", () => {
+    const html = withCheckout((c) => {
+      c.paymentMethods = [{ type: "bank-transfer", details: "<b>cuenta</b>" }];
+    });
+    expect(zodStoreConfigValidator.validate(html).ok).toBe(true);
+    expect(
+      pathsOf(
+        withCheckout((c) => {
+          c.paymentMethods = [
+            {
+              type: "bank-transfer",
+              details: "x".repeat(TEXT_LIMITS.paymentDetails + 1),
+            },
+          ];
+        }),
+      ),
+    ).toContain("checkout.paymentMethods.0.details");
+  });
+
+  it("rejects unknown method types and extra keys", () => {
+    expect(
+      pathsOf(
+        withCheckout((c) => {
+          c.paymentMethods = [{ type: "crypto", url: "https://x.cl" }];
+        }),
+      ),
+    ).toContain("checkout.paymentMethods.0.type");
+    expect(
+      pathsOf(
+        withCheckout((c) => {
+          c.paymentMethods = [
+            { type: "flow-link", url: "https://www.flow.cl/x", label: "x" },
+          ];
+        }),
+      ).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("needs a zone or pickup, unique zone names and integer CLP prices", () => {
+    expect(
+      pathsOf(
+        withCheckout((c) => {
+          c.delivery = { zones: [] };
+        }),
+      ),
+    ).toContain("checkout.delivery.zones");
+    expect(
+      pathsOf(
+        withCheckout((c) => {
+          c.delivery = {
+            zones: [
+              { name: "RM", priceClp: 1 },
+              { name: "rm", priceClp: 2 },
+            ],
+          };
+        }),
+      ),
+    ).toContain("checkout.delivery.zones");
+    for (const priceClp of [-1, 1.5, 1_000_001]) {
+      expect(
+        pathsOf(
+          withCheckout((c) => {
+            c.delivery = { zones: [{ name: "RM", priceClp }] };
+          }),
+        ),
+      ).toContain("checkout.delivery.zones.0.priceClp");
+    }
+    expect(
+      pathsOf(
+        withCheckout((c) => {
+          c.delivery = {
+            zones: [{ name: "RM", priceClp: 0 }],
+            freeShippingFromClp: 0,
+          };
+        }),
+      ),
+    ).toContain("checkout.delivery.freeShippingFromClp");
+  });
+
+  it("accepts pickup only", () => {
+    expect(
+      zodStoreConfigValidator.validate(
+        withCheckout((c) => {
+          c.delivery = { zones: [], pickup: { details: "Retiro" } };
+        }),
+      ).ok,
+    ).toBe(true);
+  });
+});

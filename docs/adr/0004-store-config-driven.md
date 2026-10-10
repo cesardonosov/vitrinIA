@@ -50,6 +50,8 @@ Usaremos **un Store Config JSON validado con Zod, versionado y renderizado solo 
    | Campo | Esquema | Hosts permitidos | Mantiene |
    |---|---|---|---|
    | `contact.paymentLink` | `https:` | Lista cerrada de proveedores de link de pago chilenos; la lista concreta depende de la decisión E1 de Cesar (`docs/STATUS.md`) | Architect (ADR o cambio de allowlist con revisión de Security) |
+   | `checkout.paymentMethods[].url` con `type: mercado-pago-link` (fila `checkout.mercadoPagoLink`) | `https:` | `mpago.la`, `link.mercadopago.cl`, `www.mercadopago.cl` (VIT-185, decisión E1 respondida el 2026-10-08 en ADR-0005 §4) | Architect, con revisión de Security |
+   | `checkout.paymentMethods[].url` con `type: flow-link` (fila `checkout.flowLink`) | `https:` | `www.flow.cl` (VIT-185) | Architect, con revisión de Security |
    | `contact.whatsapp` | no es URL: se guarda E.164 y la vitrina construye `https://wa.me/<E.164>` | `wa.me` (fijo en código) | — |
    | Redes sociales (si entran) | `https:` | Host exacto por red (`instagram.com`, `www.instagram.com`, …) | Architect |
    | Cualquier otro campo URL | prohibido hasta tener fila en esta tabla | — | — |
