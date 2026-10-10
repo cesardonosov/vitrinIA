@@ -140,3 +140,23 @@ erDiagram
 | `order_contacts` | ENABLE + FORCE | ídem | SELECT, INSERT, UPDATE (la anonimización de VIT-188 lo necesita) |
 
 Ninguna de las tres da `DELETE` a `app_user` (riesgo residual R5 del threat model: el borrado a los 6 años se diseña aparte). `orders` no tiene datos personales; el contacto del comprador vive solo en `order_contacts`, con los CHECK de largo y de "todo o nada" para dirección y factura. Los montos son `bigint` porque 50 líneas x 99 unidades x 100 millones no caben en `int4`; el caso de uso además rechaza pedidos sobre el tope. Rollback: `drizzle/rollbacks/0002_orders_tables.down.sql` (destruye pedidos y contactos).
+
+## Store Config publicado (migración 0003_store_configs, VIT-191)
+
+```mermaid
+erDiagram
+  stores ||--o{ store_configs : "store_id"
+  store_configs {
+    uuid id PK "UUID v7"
+    uuid store_id FK "stores(id), UK (store_id, id)"
+    int revision "UK (store_id, revision); la vitrina lee la mayor"
+    int schema_version "espejo de config.schemaVersion (CHECK)"
+    jsonb config "objeto, max 64 KiB; se valida con parseStoreConfig al leer y al escribir"
+  }
+```
+
+| Tabla | RLS | Política `app_user` | Grants `app_user` |
+|---|---|---|---|
+| `store_configs` | ENABLE + FORCE | `store_id = NULLIF(...)::uuid` (USING y WITH CHECK) | SELECT, INSERT, UPDATE; sin DELETE |
+
+Una fila por revisión: publicar una versión nueva es insertar `revision + 1` (la edición desde el portal y el `audit_log` son del Sprint 3). Los CHECK son una red de seguridad gruesa (objeto, `schema_version` igual al del documento, tamaño); **el contrato es `parseStoreConfig`**. `schema_version >= 0` porque la cadena de migraciones en memoria arranca en v0 (ADR-0004). Rollback: `drizzle/rollbacks/0003_store_configs.down.sql` (destruye los configs).
