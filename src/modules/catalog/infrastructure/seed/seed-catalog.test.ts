@@ -4,6 +4,11 @@ import { describe, expect, it } from "vitest";
 import { Result, StoreId } from "@/shared/kernel";
 import { EMPTY_CATALOG } from "../../application";
 import {
+  CATALOG_A,
+  CATALOG_B,
+  catalogReaderContract,
+} from "../catalog-reader.contract.spec";
+import {
   KANUWIN_CATALOG,
   KANUWIN_DEMO_STORE_ID,
   KANUWIN_WHATSAPP,
@@ -116,4 +121,25 @@ describe("createSeedCatalogReader", () => {
     );
     expect(await reader.getCatalog(other.value)).toBe(EMPTY_CATALOG);
   });
+});
+
+describe("seed catalog reader: contract", () => {
+  const id = (raw: string) => {
+    const parsed = StoreId.parse(raw);
+    if (Result.isErr(parsed)) throw new Error("bad store id");
+    return parsed.value;
+  };
+  const storeA = id("0199d0a0-0000-7000-8000-00000000000a");
+  const storeB = id("0199d0a0-0000-7000-8000-00000000000b");
+  catalogReaderContract(async () => ({
+    reader: createSeedCatalogReader(
+      new Map([
+        [storeA, CATALOG_A],
+        [storeB, CATALOG_B],
+      ]),
+    ),
+    storeA,
+    storeB,
+    empty: id("0199d0a0-0000-7000-8000-00000000000e"),
+  }));
 });
