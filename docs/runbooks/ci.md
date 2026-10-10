@@ -100,7 +100,10 @@ Verificación (una vez): intentar `git push origin main` desde una copia local d
 
 ## Estado conocido
 
-- `architecture` ejecuta `pnpm arch`, que define VIT-103 (rama `feat/VIT-103-dependency-cruiser`). Hasta que esa rama se mezcle el script no existe y el pipeline queda rojo desde ese job; como los jobs son encadenados, los siguientes (incluido `gitleaks`) se saltan en esos PRs.
+- `pnpm arch` existe (VIT-103) y pasa en `main`. `pnpm arch:fixtures` sale con código 32 por diseño: ver `docs/arquitectura/ARCHITECTURE.md`.
+- Reproducir `gitleaks` y `semgrep` en local requiere instalarlos (no vienen con `pnpm install`): gitleaks desde su release y `pipx install "semgrep==1.180.0"` (versión de CI). Los rulesets remotos `p/typescript` y `p/owasp-top-ten` necesitan acceso al registry de Semgrep.
+- Pendiente de Cesar (D6 del reporte VIT-114): a la fecha `main` figura sin protección de rama ni rulesets; los pasos están arriba.
+- Aviso de Next en `pnpm build`: la convención `middleware` está deprecada a favor de `proxy`; se trata en VIT-135 (Sprint 2).
 - La regla de `dangerouslySetInnerHTML` supone que el serializador JSON-LD vivirá en `src/shared/seo/json-ld.tsx`; si Builder lo pone en otro lado, se ajusta la exclusión en `.semgrep/rules/vitrinia.yml`.
 
 ## Si algo falla
