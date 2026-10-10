@@ -1,3 +1,4 @@
+import { logger } from "../logger";
 import { MAX_REPORT_BYTES, parseCspReport } from "./csp-report";
 import type { RateLimiter } from "./rate-limit";
 
@@ -53,9 +54,7 @@ export function createCspReportHandler(deps: CspReportHandlerDeps) {
   return async function handleCspReport(request: Request): Promise<Response> {
     // Per-key first so a throttled client does not consume the global budget.
     if (!deps.perKey.allow(clientKey(request)) || !deps.global.allow("*")) {
-      console.warn(
-        JSON.stringify({ event: "security.rate_limited", route: "csp-report" }),
-      );
+      logger.warn({ event: "security.rate_limited", route: "csp-report" });
       return noContent(429);
     }
 
@@ -76,9 +75,7 @@ export function createCspReportHandler(deps: CspReportHandlerDeps) {
     if (!violations) return noContent(400);
 
     for (const violation of violations) {
-      console.warn(
-        JSON.stringify({ event: "security.csp_violation", ...violation }),
-      );
+      logger.warn({ event: "security.csp_violation", ...violation });
     }
     return noContent(204);
   };

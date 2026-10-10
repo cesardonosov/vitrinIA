@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "../logger";
 import { MAX_REPORT_BYTES } from "./csp-report";
 import {
   clientKey,
@@ -39,7 +40,7 @@ const valid = JSON.stringify({
 
 let warn: ReturnType<typeof vi.spyOn>;
 beforeEach(() => {
-  warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  warn = vi.spyOn(logger, "warn").mockImplementation(() => {});
 });
 afterEach(() => warn.mockRestore());
 
@@ -47,7 +48,7 @@ describe("csp report handler", () => {
   it("accepts a valid report and logs no personal data", async () => {
     const res = await setup()(request(valid));
     expect(res.status).toBe(204);
-    const logged = String(warn.mock.calls[0]?.[0]);
+    const logged = JSON.stringify(warn.mock.calls[0]?.[0]);
     expect(logged).toContain("security.csp_violation");
     expect(logged).not.toMatch(/@|email/);
   });
