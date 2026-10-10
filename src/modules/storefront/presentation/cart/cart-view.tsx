@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { cartCount, cartSubtotal, setQuantity } from "../../domain/cart";
 import { useCart } from "./use-cart";
 
@@ -17,6 +18,17 @@ export interface CartViewProps {
   readonly showPrice: boolean;
   /** wa.me digits; absent while the store has no real number. */
   readonly whatsappDigits?: string;
+  /**
+   * Online checkout (orders module). When given it replaces the plain WhatsApp link: the
+   * app route wires it so storefront does not import the orders module.
+   */
+  readonly renderCheckout?: (cart: {
+    readonly lines: ReadonlyArray<{
+      readonly variantId: string;
+      readonly quantity: number;
+    }>;
+    readonly subtotalClp: number;
+  }) => ReactNode;
 }
 
 const clp = new Intl.NumberFormat("es-CL", {
@@ -39,7 +51,12 @@ function orderMessage(
   return `Hola, quiero hacer este pedido:\n${body}${showPrice ? `\nSubtotal: ${clp.format(total)}` : ""}`;
 }
 
-export function CartView({ items, showPrice, whatsappDigits }: CartViewProps) {
+export function CartView({
+  items,
+  showPrice,
+  whatsappDigits,
+  renderCheckout,
+}: CartViewProps) {
   const [cart, update] = useCart();
   const lines = cart.flatMap((line) => {
     const info = items[line.variantId];
@@ -147,24 +164,36 @@ export function CartView({ items, showPrice, whatsappDigits }: CartViewProps) {
           <span className="text-h2 font-bold">{clp.format(subtotal)}</span>
         </div>
       ) : null}
-      <p className="text-small">
-        El despacho y la forma de pago se coordinan con la tienda.
-      </p>
-
-      {href ? (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex min-h-touch w-full items-center justify-center rounded-md bg-primary px-5 py-3 text-body font-semibold text-on-primary hover:brightness-110"
-        >
-          Enviar pedido por WhatsApp
-          <span className="sr-only"> (abre WhatsApp)</span>
-        </a>
+      {renderCheckout ? (
+        renderCheckout({
+          lines: lines.map(({ variantId, quantity }) => ({
+            variantId,
+            quantity,
+          })),
+          subtotalClp: subtotal,
+        })
       ) : (
-        <p className="rounded-md border border-border p-3 text-center">
-          Esta tienda todavía no recibe pedidos en línea.
-        </p>
+        <>
+          <p className="text-small">
+            El despacho y la forma de pago se coordinan con la tienda.
+          </p>
+
+          {href ? (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-touch w-full items-center justify-center rounded-md bg-primary px-5 py-3 text-body font-semibold text-on-primary hover:brightness-110"
+            >
+              Enviar pedido por WhatsApp
+              <span className="sr-only"> (abre WhatsApp)</span>
+            </a>
+          ) : (
+            <p className="rounded-md border border-border p-3 text-center">
+              Esta tienda todavía no recibe pedidos en línea.
+            </p>
+          )}
+        </>
       )}
     </div>
   );

@@ -38,7 +38,8 @@
     "arch": "depcruise --config .dependency-cruiser.cjs src",
     "arch:fixtures": "cd tests/arch-fixtures && depcruise --config ../../.dependency-cruiser.cjs src",
     "arch:graph": "depcruise --config .dependency-cruiser.cjs --include-only \"^src/\" --output-type mermaid src > docs/arquitectura/dependencias.mmd",
-    "demo-catalog:sql": "WRITE_DEMO_CATALOG_SQL=1 vitest run src/modules/catalog/infrastructure/seed/demo-sql.test.ts"
+    "demo-catalog:sql": "WRITE_DEMO_CATALOG_SQL=1 vitest run src/modules/catalog/infrastructure/seed/demo-sql.test.ts",
+    "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright} playwright test"
   },
   "dependencies": {
     "@dotenvx/dotenvx": "^2.33.0",
@@ -54,6 +55,7 @@
     "@biomejs/biome": "^2.5.15",
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
+    "@playwright/test": "1.56.1",
     "@storybook/addon-a11y": "^10.6.1",
     "@storybook/nextjs": "^10.6.1",
     "@tailwindcss/postcss": "^4.3.3",

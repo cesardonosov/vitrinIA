@@ -33,6 +33,8 @@ sequenceDiagram
 | `infrastructure/db-order-repository.ts` | Adaptador Drizzle: una `withStoreTx`, idempotencia con `ON CONFLICT`, reintento de código con savepoint |
 | `infrastructure/turnstile-verifier.ts` | Verificación servidor de Cloudflare Turnstile; falla cerrado |
 | `infrastructure/memory-order-rate-limiter.ts` | 5 pedidos / 10 min por IP y tienda, 300 / día por tienda (en memoria, riesgo R2) |
+| `presentation/checkout/*` | `CheckoutPanel` (formulario móvil primero, sin persistir datos del comprador), `TurnstileWidget`, `OrderConfirmation` (código, botón a `wa.me`, medios de pago como texto escapado) |
+| `src/app/(vitrina)/s/[host]/carrito/cart-with-checkout.tsx` | Une carrito (storefront) y checkout (orders), que no se importan entre sí; vacía el carrito al confirmar |
 | `presentation/http/place-order-handler.ts` | Route handler: Origin, tamaño, esquema Zod strict, mapeo de errores, `Cache-Control: private, no-store` |
 
 ## Decisiones
@@ -43,3 +45,5 @@ sequenceDiagram
 - **Sin checkout en el Store Config** (o sin WhatsApp real, o `whatsappCheckout` apagado): `placeOrder` responde igual que un host desconocido y el carrito conserva el enlace simple a WhatsApp.
 - **IP del comprador**: `cf-connecting-ip`; si falta, el último salto de `x-forwarded-for`; si falta, un cubo compartido. Siempre truncada (/24, /48). Se endurece con VIT-158.
 - **Eventos de analítica** (O15) no entran aquí: no existe todavía la tabla `events`.
+
+E2E: [`docs/qa/e2e-orders.md`](../../qa/e2e-orders.md).

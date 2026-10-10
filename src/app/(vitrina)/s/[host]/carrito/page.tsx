@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { storefrontDeps } from "@/infra/container";
+import { storefrontDeps, turnstileSiteKey } from "@/infra/container";
+import type { CheckoutOptions } from "@/modules/orders/presentation/client";
+import { isPlaceholderWhatsApp } from "@/modules/store-config/application";
 import { loadStorefront } from "@/modules/storefront/application";
 import {
   type CartItemInfo,
@@ -10,6 +12,7 @@ import {
   StorefrontShell,
   storeWhatsAppDigits,
 } from "@/modules/storefront/presentation";
+import { CartWithCheckout } from "./cart-with-checkout";
 
 interface Params {
   readonly params: Promise<{ host: string }>;
@@ -42,20 +45,43 @@ export default async function CartPage({ params }: Params) {
       };
     }
   }
+  // Online checkout only for stores that configured delivery and payment and have a real
+  // WhatsApp; the rest keep the plain WhatsApp link.
+  const { checkout } = config;
+  const checkoutOptions: CheckoutOptions | undefined =
+    checkout &&
+    config.features.whatsappCheckout &&
+    !isPlaceholderWhatsApp(config.contact.whatsapp)
+      ? {
+          zones: checkout.delivery.zones,
+          ...(checkout.delivery.freeShippingFromClp !== undefined
+            ? { freeShippingFromClp: checkout.delivery.freeShippingFromClp }
+            : {}),
+          ...(checkout.delivery.pickup
+            ? { pickup: checkout.delivery.pickup }
+            : {}),
+          invoiceOffered: checkout.invoice,
+          showPrices: config.features.showPrices,
+          siteKey: turnstileSiteKey(),
+        }
+      : undefined;
+  const cartProps = {
+    items,
+    showPrice: config.features.showPrices,
+    whatsappDigits: config.features.whatsappCheckout
+      ? storeWhatsAppDigits(config)
+      : undefined,
+  };
   return (
     <StorefrontShell config={config}>
       <section className="px-4 py-6 md:px-8 md:py-10">
         <div className="mx-auto max-w-2xl">
           <h1 className="mb-5 font-display text-h1 font-bold">Tu carrito</h1>
-          <CartView
-            items={items}
-            showPrice={config.features.showPrices}
-            whatsappDigits={
-              config.features.whatsappCheckout
-                ? storeWhatsAppDigits(config)
-                : undefined
-            }
-          />
+          {checkoutOptions ? (
+            <CartWithCheckout {...cartProps} checkout={checkoutOptions} />
+          ) : (
+            <CartView {...cartProps} />
+          )}
         </div>
       </section>
     </StorefrontShell>
