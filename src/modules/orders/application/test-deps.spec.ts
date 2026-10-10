@@ -1,6 +1,7 @@
 import type { Catalog, CatalogReader } from "@/modules/catalog/application";
 import {
   parseStoreConfig,
+  ROPA_PRESET,
   type StoreConfig,
   type StoreConfigReader,
 } from "@/modules/store-config/application";
@@ -13,18 +14,11 @@ import type { PlaceOrderDeps } from "./place-order";
 import type { OrderLogFields } from "./ports/order-log";
 import type { OrderRepository } from "./ports/order-repository";
 
-/** Store Config v1 with a checkout block (copy of tests/fixtures/store-config/v1/checkout.json:
- * src/ cannot import tests/, the Docker build ignores it). */
+/** Store Config v1 with a checkout block (mirrors tests/fixtures/store-config/v1/checkout.json;
+ * src/ cannot import tests/, the Docker build ignores it). The theme comes from a preset. */
 const checkoutFixture = {
-  schemaVersion: 1,
-  identity: { name: "Tienda con checkout" },
-  theme: {
-    colors: { primary: "#1d4ed8", background: "#ffffff", text: "#111827" },
-    font: "system-sans",
-    radius: "md",
-  },
+  ...ROPA_PRESET,
   contact: { whatsapp: "+56912345678" },
-  pages: { home: { sections: [] } },
   features: {
     showPrices: true,
     showStock: false,

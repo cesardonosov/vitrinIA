@@ -256,7 +256,12 @@ describe("placeOrder: validation and abuse controls", () => {
   it("passes the token and client key to the verifier", async () => {
     const seen: string[] = [];
     const h = harness({
-      verifier: { verify: async (t, c) => (seen.push(t, c), true) },
+      verifier: {
+        verify: async (t, c) => {
+          seen.push(t, c);
+          return true;
+        },
+      },
     });
     await placeOrder(h.deps, input({ humanToken: "tok-1", clientKey: "k-1" }));
     expect(seen).toEqual(["tok-1", "k-1"]);

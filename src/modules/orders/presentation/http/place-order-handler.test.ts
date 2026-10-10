@@ -357,7 +357,12 @@ describe("client address", () => {
   it("the limiter sees the truncated address, never the full one", async () => {
     const seen: string[] = [];
     const h = harness({
-      limiter: { check: (_s, k) => (seen.push(k), "allowed") },
+      limiter: {
+        check: (_s, k) => {
+          seen.push(k);
+          return "allowed";
+        },
+      },
     });
     await call(h);
     expect(seen).toEqual(["203.0.113.0"]);
