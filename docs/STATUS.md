@@ -28,7 +28,6 @@ Cerrados hoy: #79, #80, #83, #84, #85, #35, #37 (más #26, #77 y #86 antes).
 - VIT-191 (#91): Store Config persistido en la base de datos (hoy sale de memoria, solo Kanuwiñ)
 - VIT-192 (#92): caché host a tienda con TTL e invalidación
 - Pendientes del sprint sin empezar: VIT-187 (#87), VIT-188 (#88, puede pasar al Sprint 3), VIT-125 (#25), VIT-174 (#74), VIT-140 (#40), VIT-152 (#52), VIT-119 (#19) y la deuda de seguridad del Sprint 1
-- ADR-0011 sigue en estado Propuesto aunque #93 está en main: falta pasarlo a Aceptado con el OK de Cesar y la revisión de Security
 - First-load JS de la vitrina (~176 KB gzip) sobre el presupuesto de 100 KB: decide QA
 
 ## Seguimientos por crear como issue
@@ -70,7 +69,6 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 16. DNS de `vitrinia.cl` delegado a Cloudflare: bloquea el túnel y la demo en un subdominio (plan B: `kanuwin.localhost` en el PC de Cesar).
 17. Datos reales de Kanuwiñ: medios de pago (link de Mercado Pago o Flow, datos de transferencia), zonas y precios de despacho, número de WhatsApp definitivo y las 2 fotos reales. Hoy son datos de demo marcados como provisorios.
 18. Ruleset de `main` con los checks requeridos (13 pasos en `docs/runbooks/ci.md`); sigue sin protección. Ver 11a.
-19. ADR-0011 (`proxy.ts`): OK de Cesar para pasarlo a Aceptado, ya que #93 está mezclado.
 
 ## Últimos cambios
 - 2026-10-10 · Sprint 2 · Reconciliación: #79, #80, #83, #84, #85, #35 y #37 cerrados; #81 y #82 siguen abiertos con lo que falta. TODO: 1

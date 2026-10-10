@@ -21,6 +21,6 @@ Registro de decisiones técnicas relevantes. Cómo escribir uno: skill `write-ad
 | [0008](0008-reglas-de-dependencia-con-dependency-cruiser.md) | Reglas de dependencia verificadas con dependency-cruiser | Aceptado | 2026-10-08 | No requerida | No (apoya G6 del threat model de tenancy) |
 | [0009](0009-deny-de-lectura-de-secretos-para-agentes.md) | Negar a los agentes la lectura de `.env.keys` y `.env*` (ampliación de `deny` en `.claude/settings.json`) | Propuesto | 2026-10-08 | Sí (aprobado 2026-10-09, opción A; aplicado en VIT-116, rama `feat/VIT-116-deny-secrets`; pendiente veredicto de Security para Aceptado) | Revisión de Security (secretos) + prueba documentada del punto 5 tras mezclar |
 | [0010](0010-retencion-de-datos.md) | Plazos de retención de pedidos, compradores, eventos y logs | Propuesto | 2026-10-08 | Sí (aprobado 2026-10-08) | Revisión de Security (datos personales) |
-| [0011](0011-proxy-ts-y-rewrite-por-host.md) | `proxy.ts` en lugar de `middleware.ts` y rewrite por host a `/s/<host>` | Propuesto | 2026-10-10 | Sí (migración decidida 2026-10-09; falta OK al ADR y a VITRINIA.md §6.4) | Revisión de Security (tenancy) |
+| [0011](0011-proxy-ts-y-rewrite-por-host.md) | `proxy.ts` en lugar de `middleware.ts` y rewrite por host a `/s/<host>` | Aceptado | 2026-10-10 | Sí (OK de Cesar 2026-10-10, PR #93) | Security aprobó #93 (tenancy) |
 
 Relacionado: `docs/pre-mortem-2026-10-08.md` (riesgos altos T1, T2, T3, S1, P3, P5 y C1 apuntan a estos ADRs).
