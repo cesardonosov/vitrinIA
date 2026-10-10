@@ -91,4 +91,5 @@ export {
   type ParseStoreConfigError,
   parseStoreConfig,
 } from "./parse-store-config";
+export type { StoreConfigReader } from "./ports/store-config-reader";
 export type { StoreConfigValidator } from "./ports/store-config-validator";
