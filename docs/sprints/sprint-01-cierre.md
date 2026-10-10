@@ -1,18 +1,17 @@
 # Sprint 1 — Fundaciones y marca · cierre
 
-> **BORRADOR.** Se finaliza (y pasa a `docs/sprints/sprint-01.md` como resumen de cierre) cuando se mezclen #38, #39 y #75 y Cesar corra `pnpm dev:up`. Hasta entonces las cifras de este documento son las de `main` en `7e79040` más el estado de los 3 PRs abiertos, verificados con `gh api` el 2026-10-10.
+> **BORRADOR.** #38, #39 y #75 ya están en `main` (OK de Cesar, 2026-10-10). Se finaliza cuando Cesar corra `pnpm dev:up` y se cierre VIT-114. Cifras verificadas con `gh api` el 2026-10-10.
 
 Fechas: 2026-10-08 a 2026-10-14 (plan en [`sprint-01.md`](sprint-01.md)). Borrador escrito el 2026-10-10.
 
 ## Resultado
 
-Objetivo: **parcial** — los gates de CI y la base segura están en `main`; la demo "levanta con un comando" no está verificada de punta a punta.
+Objetivo: **parcial** (15/16; falta la verificación humana de la demo) — los gates de CI y la base segura están en `main`; la demo "levanta con un comando" no está verificada de punta a punta.
 
-Issues: **12 cerrados de 16** (101, 103, 104, 105, 106, 107, 109, 110, 111, 112, 115, 116). Pendientes al día de hoy:
+Issues: **15 cerrados de 16** (todos salvo VIT-114). Cerrados el 2026-10-10: VIT-102 (#38, `4cdf4a1`), VIT-108 (#39, `d79c4e0`) y VIT-113 (cerrado tal como está). Pendiente:
 
-- VIT-102 (#2) y VIT-108 (#8): código y docs listos, aprobados y con CI verde; esperan el OK de Cesar para mezclar #38 y #39. Se cierran al mezclar.
-- VIT-113 (#13): preset `aves` y catálogo de Kanuwiñ en `main` (#70). La story y las capturas a 375 px quedan para el Sprint 2, cuando existan los componentes de vitrina. Propuesta: cerrar VIT-113 con lo que está y mover story y capturas a un issue nuevo del Sprint 2 (decisión del Orchestrator, se avisa a Cesar en el resumen).
-- VIT-114 (#14): criterio 2 pasa; criterio 1 espera la corrida de Cesar; criterio 3 parcial (bugs listados, issues por crear). Se cierra con la corrida de Cesar.
+- VIT-113 (#13) se cerró con el preset `aves` y el catálogo de Kanuwiñ (#70). Movido al Sprint 2 con motivo: la story y las capturas a 375 px necesitan los componentes de vitrina; se crea un issue nuevo.
+- VIT-114 (#14): #75 (`c3f150d`) está en `main` con "Refs #14", así que el issue sigue abierto. Criterio 2 pasa; criterio 1 espera el `pnpm dev:up` de Cesar; criterio 3 parcial (bugs listados, issues por crear).
 
 Seguimientos de review que viven en el milestone y no cuentan en las 16: #43, #44, #54, #60–#64, #68 (todos abiertos) y VIT-174 (#74, ADR-0003: las particiones no heredan RLS, Architect). Ninguno bloquea la demo; el Orchestrator los reparte al planificar el Sprint 2.
 
@@ -25,27 +24,27 @@ Leyenda: OK = cumplido con evidencia; PEND = falta algo concreto. Todos los PRs 
 | Issue | DoD | Pendiente |
 |---|---|---|
 | VIT-101 Next.js + pnpm + TS strict | OK. #32, 12 checks de CI en verde | — |
-| VIT-102 Shared kernel | PEND. Base en `main`; fixes de review en #38 (aprobado, CI 12/12 verde) | Merge de #38 por Cesar |
+| VIT-102 Shared kernel | OK. #38 mergeado (`4cdf4a1`), aprobado, CI 12/12 verde | — |
 | VIT-103 Reglas de capas | OK. Contenido ya en `main`; #45 cerrado por redundante. `pnpm arch`: 0 violaciones en 54 módulos (QA, paso 5) | — |
 | VIT-104 docker-compose | OK en Postgres + Mailpit (QA pasos 15–16: `healthy`, `app_user` sin BYPASSRLS). `app`/`worker`: no verificado aquí | Cubierto por VIT-114 criterio 1 |
 | VIT-105 Pipeline de CI | OK. #53; 12 checks en `success` en `7e79040` (QA, criterio 2) | `main` sin protección de rama (D6, acción de Cesar) |
 | VIT-106 dotenvx + env Zod | OK. #34; ADR-0009 y deny de secretos en `main` (#72) | Security debe correr la matriz de ADR-0009 §5 en sesión fresca |
 | VIT-107 Esquema con RLS | OK. #46; 75/75 tests de integración (QA paso 11); aprobado por Security | VIT-174 (#74): corregir ADR-0003 decisión 3 |
-| VIT-108 Threat model + SECURITY.md | PEND. #39 aprobado por Reviewer y Security, CI 12/12 verde | Merge de #39 por Cesar |
+| VIT-108 Threat model + SECURITY.md | OK. #39 mergeado (`d79c4e0`), aprobado por Reviewer y Security, CI 12/12 verde | — |
 | VIT-109 Arnés de cruce | OK. #56; 23/23 y mutation check "all 8 checks ok" (QA pasos 12–13) | — |
 | VIT-110 Store Config v1 | OK. #66; ADR-0004 v3 confirmado por Cesar el 2026-10-09 | — |
 | VIT-111 Marca | OK. Instantánea como marca provisoria (Cesar, 2026-10-08) | Marca definitiva fuera del sprint |
 | VIT-112 Tokens + Storybook | OK. #65 | `build-storybook` y axe en CI (seguimiento P3) |
-| VIT-113 Preset 1 | PARCIAL. `aves` + catálogo Kanuwiñ en `main` (#70) | Story y capturas a 375 px (Sprint 2); 2 fotos reales |
-| VIT-114 Verificar la demo | PARCIAL. Criterio 2 pasa (CI verde y reproducido en local, `docs/qa/sprint-01-demo.md`, hoy en #75); criterio 3 parcial | Criterio 1: `pnpm dev:up` de Cesar. Merge de #75 |
+| VIT-113 Preset 1 | OK (cerrado tal como está). `aves` + catálogo Kanuwiñ en `main` (#70) | Story y capturas a 375 px pasan al Sprint 2; 2 fotos reales |
+| VIT-114 Verificar la demo | PARCIAL. Criterio 2 pasa (CI verde y reproducido en local, `docs/qa/sprint-01-demo.md`, mergeado en #75, `c3f150d`); criterio 3 parcial | Criterio 1: `pnpm dev:up` de Cesar |
 | VIT-115 Headers y CSP | OK. #42, modo report-only | Enforce en Sprint 2 |
 | VIT-116 Deny de secretos | OK. ADR-0009 aprobado y aplicado (#72) | Matriz §5 de Security (ver VIT-106) |
 
-Ningún issue se da por cerrado sin review y CI; VIT-102, 108, 113 y 114 se cierran solo con lo indicado en "Pendiente".
+Ningún issue se da por cerrado sin review y CI; VIT-114 se cierra solo con la corrida de Cesar.
 
 ## Guion de demo
 
-Máx. 8 pasos, en viewport móvil donde aplique. Datos de prueba solamente (catálogo semilla de Kanuwiñ, ya publicado por Cesar; sin datos de compradores). Pasos 1–3 y 5–7 los ejecutó QA en un contenedor; el paso 4 es el que **nadie ha corrido todavía**.
+Máx. 8 pasos, en viewport móvil donde aplique. Datos de prueba solamente (catálogo semilla de Kanuwiñ, ya publicado por Cesar; sin datos de compradores). Pasos 2 y 5–7 los ejecutó QA en un contenedor; el paso 4 es el que **nadie ha corrido todavía**.
 
 1. Mostrar `main` en GitHub: 12 checks en verde y la lista de PRs mezclados. Esperado: todos `success`. Plan B: captura de `check-runs` de `7e79040`.
 2. Clonar y `pnpm install --frozen-lockfile`. Esperado: termina sin errores (aviso "Ignored build scripts" es intencional). Plan B: caché de pnpm.
@@ -69,27 +68,27 @@ Ensayo: no hay ensayo completo en móvil con `dev:up` (paso 4 sin correr). Se re
 TODO(VIT-xxx): **1** en `src worker tests` (sprint anterior: no existe, es el primer sprint) — sin tendencia aún.
 Es `TODO(VIT-126)` en `src/infra/db/client.ts` (reemplazar `console.error` por pino); VIT-126 (#26) está abierto, así que no hay TODO huérfano. Nota: `pnpm todo-check` en QA contó 2 TODO válidos; la diferencia se concilia al finalizar este documento.
 
-Bugs de QA sin resolver: D6 (`main` sin protección, acción de Cesar) y D9 (aviso `middleware` → `proxy`, ya cubierto por VIT-135 / #35, Sprint 2). D1–D5, D7, D8 y D10 quedan corregidos o documentados en #75.
+Bugs de QA sin resolver: D6 (`main` sin protección, acción de Cesar) y D9 (aviso `middleware` → `proxy`, ya cubierto por VIT-135 / #35, Sprint 2). D1–D5, D7 y D8 se corrigieron en #75 (mergeado); D10 queda por documentar.
 
 ## Próximo sprint
 
-Sugerido: Sprint 2 — primera vitrina real (componentes de vitrina, `order_contacts`, pagos múltiples, VIT-135 proxy, enforce de CSP) más las deudas de seguridad VIT-174 y los seguimientos #43/#44/#54/#60–#64/#68. Se propone al cerrar este Sprint, no antes.
+Sugerido: Sprint 2 — primera vitrina real (componentes de vitrina, `order_contacts`, pagos múltiples, VIT-135 proxy, enforce de CSP) más las deudas de seguridad VIT-174 y los seguimientos #43/#44/#54/#60–#64/#68. Incluye story y capturas de VIT-113. Se propone al cerrar este Sprint, no antes.
 
 ## Resumen para Cesar (borrador)
 
-**Sprint 1: parcial, bien encaminado.** 12 de 16 issues cerrados; 3 esperan tu merge y 1 tu corrida.
+**Sprint 1: 15 de 16 issues cerrados; falta tu corrida.**
 
-- Visible: CI con 12 checks en verde en `main`; RLS probada con 75 tests de integración y 8 ataques detectados; preset `aves` con el catálogo de Kanuwiñ.
+- Visible: CI con 12 checks en verde en `main`; RLS probada con 75 tests de integración y 8 ataques detectados; preset `aves` con el catálogo de Kanuwiñ; threat model y SECURITY.md en `main`.
 - Riesgo principal: la demo "un comando" no se ha probado completa (`app`/`worker` no compilan en el contenedor de QA) y `main` no tiene protección de rama.
 - TODO: 1 (primer sprint, sin tendencia).
-- Demo: pendiente de que corras `pnpm dev:up`; fecha propuesta dentro del cierre del 2026-10-14.
+- Demo: se agenda cuando corras `pnpm dev:up`; cierre del sprint 2026-10-14.
 
 Pregunta (responde en un minuto):
-1. ¿Mezclamos #38, #39 y #75?
-   A) Los tres ahora  B) Solo #38 y #39, #75 después de tu `dev:up`  C) Esperar a la demo
-   Recomiendo: A (los tres tienen CI verde y aprobaciones; #75 solo corrige docs).
-2. VIT-113: ¿lo cerramos con lo que está y movemos story y capturas al Sprint 2?
-   A) Sí  B) Dejarlo abierto
+1. ¿Cuándo corres `cp .env.example .env.local` + `pnpm dev:up`?
+   A) Hoy  B) Antes del 2026-10-14  C) Prefieres que agreguemos un paso de CI que levante el compose con secretos efímeros
+   Recomiendo: A o B; C como respaldo para el Sprint 2.
+2. ¿Aplicas el ruleset de `main` (13 pasos en `docs/runbooks/ci.md`)?
+   A) Hoy  B) Antes de la demo
    Recomiendo: A.
 
 ## Archivo de "Últimos cambios" (movido desde STATUS.md)
@@ -115,3 +114,5 @@ Según la skill `status-update`, STATUS.md conserva 10 líneas; lo anterior qued
 - 2026-10-07 · VIT-117..130 · Creado backlog desde los riesgos altos del pre-mortem
 - 2026-10-07 · ADR-0001..0007 · Propuestos los ADRs iniciales (Architect)
 - 2026-10-07 · — · Pre-mortem del inicio de la POC (Architect + Security)
+- 2026-10-09 · — · Cesar aprobó las recomendaciones de R3, proxy.ts en Sprint 2, ADR-0009 completo y desvíos de ADR-0004
+- 2026-10-09 · — · Mantenedor de tiendas para administradores anotado en PENDIENTES como desarrollo futuro
