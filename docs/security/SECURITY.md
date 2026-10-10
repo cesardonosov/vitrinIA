@@ -93,7 +93,7 @@ Mecánica: pino con `redact` sobre las rutas conocidas (`req.headers.authorizati
 | Feature | Archivo | Issue | Estado | Sprint |
 |---|---|---|---|---|
 | Aislamiento entre tiendas (tenancy, RLS, host, cookies) | [`threat-models/tenancy.md`](threat-models/tenancy.md) | VIT-108 | Vigente **v1.1** (2026-10-09) | 1 |
-| Pedidos, `order_contacts` y medios de pago (checkout) | `threat-models/checkout.md` | **Issue por crear** (STATUS, "Seguimientos por crear": *Builder + Security, P1, Sprint 2: `order_contacts` con RLS, checkout por opción y job de retención*). Insumos: ADR-0005, ADR-0010. VIT-127 (métrica de GMV) es relacionado, no el dueño. | Pendiente; decisiones de Cesar ya tomadas | 2 |
+| Pedidos, `order_contacts` y medios de pago (checkout) | [`threat-models/orders.md`](threat-models/orders.md) | VIT-186 (dueño); relacionados VIT-184, VIT-185, VIT-188, VIT-127 | Vigente **v1.0** (2026-10-10); preguntas P1–P2 a Cesar con recomendación | 2 |
 | Analítica first-party (re-identificación, retención, abuso del endpoint) | `threat-models/analytics.md` | VIT-125 | Pendiente; retención fijada en ADR-0010 | 2 |
 | Auth.js, cookies y onboarding anti-abuso | `threat-models/auth.md` | VIT-124, VIT-121 | Pendiente | 3 |
 | Pipeline de imágenes (EXIF, tipo real, tamaño) | `threat-models/images.md` | VIT-123 | Pendiente | 3 |
