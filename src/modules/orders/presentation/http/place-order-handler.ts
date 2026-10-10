@@ -41,14 +41,27 @@ export function isSameOrigin(request: Request): boolean {
   }
 }
 
+/** Edge whose client-address headers are trusted. Comes from the validated `TRUSTED_PROXY`. */
+export type TrustedProxy = "cloudflare";
+
+export interface PlaceOrderHandlerOptions {
+  /** Read per request so the environment is validated at runtime, not at build. */
+  readonly trustedProxy?: () => TrustedProxy | undefined;
+}
+
 /**
  * Address used for the rate limit and logs, truncated (/24 for IPv4, /48 for IPv6) so a
- * log line or event cannot identify one person. `cf-connecting-ip` is trusted (Cloudflare is
- * the edge); otherwise the LAST hop of `x-forwarded-for`, the one the nearest proxy appended
- * and the client cannot forge; otherwise one shared bucket. The origin is not yet reachable
- * only through Cloudflare (VIT-158), so this is best effort (risk R2).
+ * log line or event cannot identify one person. The forwarding headers are client-controlled
+ * unless the origin is reachable only through a known edge, so they are read ONLY when
+ * `trustedProxy` is set (`TRUSTED_PROXY=cloudflare`, set by DevOps once VIT-158 holds). Then
+ * `cf-connecting-ip` wins, else the LAST hop of `x-forwarded-for` (the one the nearest proxy
+ * appended). Without the flag every request shares one bucket (threat model orders R2/O12).
  */
-export function clientKeyOf(headers: Headers): string {
+export function clientKeyOf(
+  headers: Headers,
+  trustedProxy?: TrustedProxy,
+): string {
+  if (trustedProxy !== "cloudflare") return "unknown";
   const cf = headers.get("cf-connecting-ip")?.trim();
   const forwarded = headers.get("x-forwarded-for")?.split(",").pop()?.trim();
   return truncateAddress(cf || forwarded || "");
@@ -109,7 +122,10 @@ function fromError(error: PlaceOrderError): Response {
  * body size, JSON, strict schema. The use case resolves the store from the Host header and
  * does the rest. No branch logs or returns anything the buyer typed.
  */
-export function createPlaceOrderHandler(deps: PlaceOrderDeps) {
+export function createPlaceOrderHandler(
+  deps: PlaceOrderDeps,
+  options: PlaceOrderHandlerOptions = {},
+) {
   return async function handlePlaceOrder(request: Request): Promise<Response> {
     if (!isSameOrigin(request)) return json(403, { error: "FORBIDDEN" });
 
@@ -135,7 +151,7 @@ export function createPlaceOrderHandler(deps: PlaceOrderDeps) {
     try {
       const result = await placeOrder(deps, {
         host: request.headers.get("host"),
-        clientKey: clientKeyOf(request.headers),
+        clientKey: clientKeyOf(request.headers, options.trustedProxy?.()),
         idempotencyKey: body.data.idempotencyKey,
         humanToken: body.data.turnstileToken,
         request: toOrderRequest(body.data),

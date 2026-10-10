@@ -51,8 +51,12 @@ function post(
   });
 }
 
-async function call(h = harness(), req = post(body())) {
-  const res = await createPlaceOrderHandler(h.deps)(req);
+async function call(
+  h = harness(),
+  req = post(body()),
+  handler = createPlaceOrderHandler(h.deps),
+) {
+  const res = await handler(req);
   return { res, json: (await res.json()) as Record<string, unknown>, h };
 }
 
@@ -339,19 +343,32 @@ describe("client address", () => {
     expect(truncateAddress("")).toBe("unknown");
   });
 
-  it("prefers cf-connecting-ip, then the last x-forwarded-for hop", () => {
+  it("behind a trusted proxy prefers cf-connecting-ip, then the last x-forwarded-for hop", () => {
     expect(
       clientKeyOf(
         new Headers({
           "cf-connecting-ip": "1.2.3.4",
           "x-forwarded-for": "9.9.9.9",
         }),
+        "cloudflare",
       ),
     ).toBe("1.2.3.0");
     expect(
-      clientKeyOf(new Headers({ "x-forwarded-for": "6.6.6.6, 5.5.5.5" })),
+      clientKeyOf(
+        new Headers({ "x-forwarded-for": "6.6.6.6, 5.5.5.5" }),
+        "cloudflare",
+      ),
     ).toBe("5.5.5.0");
-    expect(clientKeyOf(new Headers())).toBe("unknown");
+    expect(clientKeyOf(new Headers(), "cloudflare")).toBe("unknown");
+  });
+
+  it("without a trusted proxy the forwarding headers are ignored: one shared bucket", () => {
+    const spoofed = new Headers({
+      "cf-connecting-ip": "1.2.3.4",
+      "x-forwarded-for": "6.6.6.6, 5.5.5.5",
+    });
+    expect(clientKeyOf(spoofed)).toBe("unknown");
+    expect(clientKeyOf(spoofed, undefined)).toBe("unknown");
   });
 
   it("the limiter sees the truncated address, never the full one", async () => {
@@ -364,7 +381,25 @@ describe("client address", () => {
         },
       },
     });
-    await call(h);
+    await call(
+      h,
+      post(body()),
+      createPlaceOrderHandler(h.deps, { trustedProxy: () => "cloudflare" }),
+    );
     expect(seen).toEqual(["203.0.113.0"]);
+  });
+
+  it("the handler ignores spoofed headers unless TRUSTED_PROXY is set", async () => {
+    const seen: string[] = [];
+    const h = harness({
+      limiter: {
+        check: (_s, k) => {
+          seen.push(k);
+          return "allowed";
+        },
+      },
+    });
+    await call(h);
+    expect(seen).toEqual(["unknown"]);
   });
 });

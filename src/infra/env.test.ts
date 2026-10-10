@@ -125,6 +125,19 @@ describe("parseEnv", () => {
       ).toEqual(["TURNSTILE_VERIFY_URL"]);
     });
 
+    it("TRUSTED_PROXY accepts only cloudflare; empty means none", () => {
+      expect(
+        parseEnv({ ...valid, TRUSTED_PROXY: "cloudflare" }).TRUSTED_PROXY,
+      ).toBe("cloudflare");
+      expect(
+        parseEnv({ ...valid, TRUSTED_PROXY: "" }).TRUSTED_PROXY,
+      ).toBeUndefined();
+      expect(parseEnv(valid).TRUSTED_PROXY).toBeUndefined();
+      expect(
+        failure({ ...valid, TRUSTED_PROXY: "anything" }).variables,
+      ).toEqual(["TRUSTED_PROXY"]);
+    });
+
     it("does not leak the secret value in the error", () => {
       expect(
         failure({ ...prod, ...keys, TURNSTILE_VERIFY_URL: "http://x.y/z" })

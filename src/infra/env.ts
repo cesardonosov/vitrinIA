@@ -31,6 +31,13 @@ const schema = z
       emptyAsUndefined,
       z.string().min(1).optional(),
     ),
+    // Edge in front of the app whose client-address headers may be trusted (rate limit key).
+    // Unset = trust none: one shared bucket. Set by DevOps only when the origin is reachable
+    // solely through that edge (VIT-158). A value outside the list fails startup.
+    TRUSTED_PROXY: z.preprocess(
+      emptyAsUndefined,
+      z.enum(["cloudflare"]).optional(),
+    ),
     // Test-only override of the siteverify endpoint (E2E fake). Refused in staging and production.
     TURNSTILE_VERIFY_URL: z.preprocess(
       emptyAsUndefined,

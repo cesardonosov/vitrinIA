@@ -97,7 +97,7 @@ erDiagram
     uuid store_id FK "UK (store_id,id)"
     text code "UK por tienda, aleatorio, [A-Z2-9]{6,12}"
     uuid idempotency_key "UK por tienda"
-    text request_hash "sha256 de líneas + opción"
+    text request_hash "sha256 de líneas + opción + contacto"
     text status "intent | confirmed | cancelled"
     text channel "whatsapp | payment_link"
     text delivery_type "delivery | pickup"
@@ -139,7 +139,7 @@ erDiagram
 | `order_items` | ENABLE + FORCE | ídem | SELECT, INSERT (snapshot inmutable) |
 | `order_contacts` | ENABLE + FORCE | ídem | SELECT, INSERT, UPDATE (la anonimización de VIT-188 lo necesita) |
 
-Ninguna de las tres da `DELETE` a `app_user` (riesgo residual R5 del threat model: el borrado a los 6 años se diseña aparte). `orders` no tiene datos personales; el contacto del comprador vive solo en `order_contacts`, con los CHECK de largo y de "todo o nada" para dirección y factura. Los montos son `bigint` porque 50 líneas x 99 unidades x 100 millones no caben en `int4`; el caso de uso además rechaza pedidos sobre el tope. Rollback: `drizzle/rollbacks/0002_orders_tables.down.sql` (destruye pedidos y contactos).
+Ninguna de las tres da `DELETE` a `app_user` (riesgo residual R5 del threat model: el borrado a los 6 años se diseña aparte). `orders` no tiene datos personales legibles; `request_hash` es solo un sha256 (de líneas + opción + contacto limpio; el texto de origen no se guarda ni se loguea), así que no contiene datos personales en claro. Como un teléfono tiene poca entropía, ese hash se podría adivinar por fuerza bruta contra un contacto conocido: la anonimización (VIT-188) debe reemplazarlo junto con `order_contacts`. El contacto del comprador vive solo en `order_contacts`, con los CHECK de largo y de "todo o nada" para dirección y factura. Los montos son `bigint` porque 50 líneas x 99 unidades x 100 millones no caben en `int4`; el caso de uso además rechaza pedidos sobre el tope. Rollback: `drizzle/rollbacks/0002_orders_tables.down.sql` (destruye pedidos y contactos).
 
 ## Store Config publicado (migración 0003_store_configs, VIT-191)
 

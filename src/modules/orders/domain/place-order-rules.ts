@@ -323,8 +323,13 @@ function shippingFor(
 
 /**
  * Canonical text of what defines an order for idempotency: lines (sorted, so their order in
- * the cart does not matter) and the delivery option. The contact is left out on purpose:
- * fixing a typo in the phone and resending the same key returns the first order.
+ * the cart does not matter), the delivery option and the cleaned buyer contact (issue 108). If the
+ * buyer fixes the phone or address and resends with the same key the fingerprint differs, the
+ * repository answers `IdempotencyConflict` and the client regenerates its key, so the seller
+ * never gets the stale contact from a `replayed` order.
+ *
+ * The contact is part of the text only so the repository can hash it: this string never leaves
+ * the process (not logged, not returned) and is stored only as the sha256 of the whole text.
  */
 export function fingerprintOf(request: ValidOrderRequest): string {
   const lines = request.lines
@@ -335,5 +340,22 @@ export function fingerprintOf(request: ValidOrderRequest): string {
     request.delivery.type === "pickup"
       ? "pickup"
       : `delivery:${request.delivery.zone}`;
-  return `${lines}|${option}`;
+  return `${lines}|${option}|${contactCanonical(request.contact)}`;
+}
+
+/** Fixed field order, JSON-encoded so no value can shift into its neighbour. */
+function contactCanonical(contact: BuyerContact): string {
+  const { address, invoice } = contact;
+  return JSON.stringify([
+    contact.name,
+    contact.phone,
+    contact.email ?? null,
+    contact.note ?? null,
+    address
+      ? [address.region, address.commune, address.street, address.extra ?? null]
+      : null,
+    invoice
+      ? [invoice.rut, invoice.businessName, invoice.businessActivity]
+      : null,
+  ]);
 }

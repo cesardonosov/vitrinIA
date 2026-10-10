@@ -120,6 +120,28 @@ describe("placeOrder: idempotency (O11)", () => {
     expect(codeOf(r)).toBe("IdempotencyConflict");
     expect(JSON.stringify(r)).not.toContain("K7M2QXA");
   });
+
+  it("the same key with a corrected phone is a conflict, and a new key saves the new contact (issue 108)", async () => {
+    const h = harness();
+    await placeOrder(h.deps, input());
+    const corrected = request({
+      contact: { name: "Ana Pérez", phone: "9 8765 4321" },
+    });
+    const stale = await placeOrder(h.deps, input({ request: corrected }));
+    expect(codeOf(stale)).toBe("IdempotencyConflict");
+    expect(h.saved).toHaveLength(1);
+
+    const fresh = await placeOrder(
+      h.deps,
+      input({
+        request: corrected,
+        idempotencyKey: "0199d0a0-0000-7000-8000-0000000000a3",
+      }),
+    );
+    if (!Result.isOk(fresh)) throw new Error("expected ok");
+    expect(fresh.value.replayed).toBe(false);
+    expect(h.saved).toHaveLength(2);
+  });
 });
 
 describe("placeOrder: tenant (O4, O7)", () => {
@@ -251,6 +273,10 @@ describe("placeOrder: validation and abuse controls", () => {
     const r = await placeOrder(h.deps, input());
     expect(codeOf(r)).toBe("HumanVerificationFailed");
     expect(h.saved).toHaveLength(0);
+    const event = h.logs.find(
+      (l) => l.event === "security.human_verification_failed",
+    );
+    expect(event?.fields).toMatchObject({ client: input().clientKey });
   });
 
   it("passes the token and client key to the verifier", async () => {

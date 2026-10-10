@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import { defineConfig } from "@playwright/test";
 
 /**
@@ -9,6 +10,8 @@ import { defineConfig } from "@playwright/test";
  */
 const PORT = 3100;
 const VERIFY_PORT = 8788;
+/** Throwaway secret, new on every run: no literal secret lives in the repo. */
+const SESSION_SECRET = randomBytes(32).toString("hex");
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -51,7 +54,7 @@ export default defineConfig({
       env: {
         APP_ENV: "development",
         DATABASE_URL: process.env.TEST_DATABASE_URL ?? "",
-        SESSION_SECRET: "e2e-session-secret-0123456789abcdef0123",
+        SESSION_SECRET,
         LOG_LEVEL: "warn",
         TURNSTILE_VERIFY_URL: `http://127.0.0.1:${VERIFY_PORT}/siteverify`,
       },
