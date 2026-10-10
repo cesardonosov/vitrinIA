@@ -83,3 +83,60 @@ Todas tienen además `created_at`, `updated_at` y `version`. Las FK hijas son co
 Restricciones que también valida la BD (no solo el caso de uso): precio entero en CLP entre 1 y 100 millones (deja los totales de un pedido lejos de 2^31); `image_src` solo como ruta propia bajo `/demo/` o `/media/`, sin `..` ni esquema; imagen completa o ausente (src, alt, ancho y alto juntos); `nutrition` siempre un arreglo JSON. Índices extra: `(store_id, product_id, position)` en variantes y `(store_id, category_id)` en productos.
 
 Solo los productos con `published = true` y al menos una variante llegan a la vitrina (`createDbCatalogReader`). Rollback: `drizzle/rollbacks/0001_catalog_tables.down.sql` (destruye catálogos).
+
+## Pedidos (migración 0002_orders_tables, VIT-186)
+
+```mermaid
+erDiagram
+  stores ||--o{ orders : "store_id"
+  orders ||--o{ order_items : "(store_id, order_id)"
+  orders ||--o| order_contacts : "(store_id, order_id) 1:1"
+  product_variants |o--o{ order_items : "(store_id, variant_id) SET NULL"
+  orders {
+    uuid id PK "v7"
+    uuid store_id FK "UK (store_id,id)"
+    text code "UK por tienda, aleatorio, [A-Z2-9]{6,12}"
+    uuid idempotency_key "UK por tienda"
+    text request_hash "sha256 de líneas + opción"
+    text status "intent | confirmed | cancelled"
+    text channel "whatsapp | payment_link"
+    text delivery_type "delivery | pickup"
+    text delivery_zone "nombre de la zona; NULL en retiro"
+    bool invoice
+    bigint subtotal_clp
+    bigint shipping_clp
+    bigint total_clp "= subtotal + shipping (CHECK)"
+  }
+  order_items {
+    uuid id PK "v7"
+    uuid store_id FK
+    uuid order_id FK "compuesta, ON DELETE CASCADE"
+    uuid variant_id FK "compuesta, ON DELETE SET NULL (variant_id)"
+    int position "0-49, UK por pedido"
+    text product_name "snapshot"
+    text variant_label "snapshot"
+    int unit_price_clp "snapshot"
+    int quantity "1-99"
+    bigint line_total_clp "= unit x quantity (CHECK)"
+  }
+  order_contacts {
+    uuid id PK "v7"
+    uuid store_id FK
+    uuid order_id FK "compuesta, UK (store_id, order_id)"
+    text name "1-80"
+    text phone "E.164"
+    text email "opcional"
+    text note "opcional, 500"
+    text region_commune_street "dirección: todo o nada (solo despacho)"
+    text rut_business "factura: todo o nada (solo con factura)"
+    timestamptz anonymized_at "VIT-188"
+  }
+```
+
+| Tabla | RLS | Política `app_user` | Grants `app_user` |
+|---|---|---|---|
+| `orders` | ENABLE + FORCE | `store_id = NULLIF(...)::uuid` (USING y WITH CHECK) | SELECT, INSERT y `UPDATE (status, version, updated_at)`; nunca montos, código ni opción |
+| `order_items` | ENABLE + FORCE | ídem | SELECT, INSERT (snapshot inmutable) |
+| `order_contacts` | ENABLE + FORCE | ídem | SELECT, INSERT, UPDATE (la anonimización de VIT-188 lo necesita) |
+
+Ninguna de las tres da `DELETE` a `app_user` (riesgo residual R5 del threat model: el borrado a los 6 años se diseña aparte). `orders` no tiene datos personales; el contacto del comprador vive solo en `order_contacts`, con los CHECK de largo y de "todo o nada" para dirección y factura. Los montos son `bigint` porque 50 líneas x 99 unidades x 100 millones no caben en `int4`; el caso de uso además rechaza pedidos sobre el tope. Rollback: `drizzle/rollbacks/0002_orders_tables.down.sql` (destruye pedidos y contactos).

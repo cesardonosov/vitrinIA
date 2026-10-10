@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, isNull, sql } from "drizzle-orm";
 import type { StoreTx } from "@/infra/db/with-store-tx";
 import { uuidv7 } from "@/infra/uuid-v7";
 import {
@@ -6,6 +6,11 @@ import {
   products,
   productVariants,
 } from "@/modules/catalog/infrastructure/schema";
+import {
+  orderContacts,
+  orderItems,
+  orders,
+} from "@/modules/orders/infrastructure/schema";
 import { domains, stores } from "@/modules/store-config/infrastructure/schema";
 import type { StoreId } from "@/shared/kernel";
 import type { ColumnInfo, TenantTable } from "./catalog";
@@ -86,6 +91,63 @@ export const seeders: Readonly<Record<string, Seeder>> = {
       productId: product.id,
       label: `${n} kg`,
       priceClp: 1000 * n,
+    });
+  },
+  // Orders (VIT-186): the order first, then its items and contact pick it up (same store only).
+  "public.orders": async (tx, storeId, n) => {
+    const letter = String.fromCharCode(65 + (n % 26));
+    await tx.insert(orders).values({
+      id: uuidv7(),
+      storeId,
+      code: `SEED${letter}${letter}`,
+      idempotencyKey: uuidv7(),
+      requestHash: "0".repeat(64),
+      deliveryType: "pickup",
+      subtotalClp: 1000 * n,
+      shippingClp: 0,
+      totalClp: 1000 * n,
+    });
+  },
+  "public.order_items": async (tx, storeId, n) => {
+    const [order] = await tx.select({ id: orders.id }).from(orders).limit(1);
+    if (!order) throw new Error("seed orders before order_items");
+    const [variant] = await tx
+      .select({ id: productVariants.id })
+      .from(productVariants)
+      .limit(1);
+    await tx.insert(orderItems).values({
+      id: uuidv7(),
+      storeId,
+      orderId: order.id,
+      variantId: variant?.id ?? null,
+      position: n % 50,
+      productName: `Producto ${n}`,
+      variantLabel: `${n} kg`,
+      unitPriceClp: 1000 * n,
+      quantity: 1,
+      lineTotalClp: 1000 * n,
+    });
+  },
+  // 1:1 with its order, so each contact takes an order that has none yet.
+  "public.order_contacts": async (tx, storeId, n) => {
+    const free = await tx
+      .select({ id: orders.id })
+      .from(orders)
+      .leftJoin(orderContacts, eq(orderContacts.orderId, orders.id))
+      .where(isNull(orderContacts.id))
+      .limit(1);
+    // The cross-store INSERT probe (n = 99) finds no free order; RLS rejects it before the FK.
+    const [anyOrder] = free.length
+      ? free
+      : await tx.select({ id: orders.id }).from(orders).limit(1);
+    const order = anyOrder;
+    if (!order) throw new Error("seed orders before order_contacts");
+    await tx.insert(orderContacts).values({
+      id: uuidv7(),
+      storeId,
+      orderId: order.id,
+      name: `Comprador ${n}`,
+      phone: "+56900000000",
     });
   },
 };
