@@ -44,14 +44,14 @@ Dos tiendas A y B se siembran antes de cada test con datos equivalentes (1 fila 
 | S1 | `relrowsecurity` y `relforcerowsecurity` | catálogo | ambos `true` | AC2, C2, C6 |
 | S2 | Dueño de la tabla | catálogo | no es `app_user` | C1 |
 | S3 | Toda política permisiva alcanzable por `app_user` (o `PUBLIC`) | catálogo | `USING` y `WITH CHECK` **exactamente** `store_id = NULLIF(current_setting('app.store_id', true), '')::uuid` (`id` en `stores`); sin `OR`, sin `IS NULL`, sin `true` | C2 |
-| S4 | Cada privilegio que `app_user` tiene (`SELECT/INSERT/UPDATE/DELETE`) | catálogo | cubierto por una política | C2 |
+| S4 | Cada privilegio que `app_user` tiene (`SELECT/INSERT/UPDATE/DELETE`; el `UPDATE` cuenta también los grants por columna, p. ej. `orders`) | catálogo | cubierto por una política | C2 |
 | S5 | Partición | catálogo | su padre está en el catálogo; si `app_user` tiene acceso directo, tiene política propia | G3 |
 | D1 | `SELECT`, `count(*)`, `count(distinct store_id)` | A y B | solo filas propias, conteo propio = sembrado, 0 filas de la otra | AC1, C5 |
 | D2 | `SELECT` | sin contexto | 0 filas (fail-closed) | C2 |
-| D3 | `UPDATE ... WHERE store_id = B` y `UPDATE` sin `WHERE` | A | 0 filas / solo filas propias; B intacta | AC1, C5 |
+| D3 | `UPDATE ... WHERE store_id = B` y `UPDATE` sin `WHERE` | A | 0 filas / solo filas propias; B intacta | AC1, C5 (usa una columna con grant si no hay UPDATE de tabla, #106) |
 | D4 | `DELETE ... WHERE store_id = B` | A | 0 filas; B intacta (o `permission denied` si no hay grant, p. ej. `stores`) | AC1, C5 |
 | D5 | `INSERT` de una fila con `store_id = B` | A | error `row-level security` (`WITH CHECK`); B intacta | G1 |
-| D6 | `UPDATE` de una fila propia a `store_id = B` | A | error `row-level security`; A y B intactas | G1 |
+| D6 | `UPDATE` de una fila propia a `store_id = B` | A | error `row-level security`; A y B intactas | G1 (si `store_id` no es actualizable: `permission denied`) |
 | D7 | Tabla particionada: suma de conteos por partición = conteo del padre | A | igual | G3 |
 | D8 | Partición sin grant directo | A | `permission denied` (solo se llega por el padre) | G3 |
 

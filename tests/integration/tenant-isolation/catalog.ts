@@ -44,6 +44,8 @@ export interface ColumnInfo {
   readonly notNull: boolean;
   readonly hasDefault: boolean;
   readonly generated: boolean;
+  /** app_user may UPDATE this column (table-level or column-level grant). */
+  readonly appUserCanUpdate: boolean;
   /** Target table ("schema.name") when the column is part of a FOREIGN KEY. */
   readonly referencesTable: string | null;
 }
@@ -63,7 +65,11 @@ export interface TenantTable {
   /** Column the tenant policy must compare: "store_id", or "id" for public.stores. */
   readonly tenantKey: "store_id" | "id";
   readonly policies: readonly PolicyInfo[];
-  /** Privileges app_user holds directly on this relation. */
+  /**
+   * Privileges app_user holds directly on this relation. UPDATE counts a column-level
+   * grant too (has_any_column_privilege): has_table_privilege alone ignores them and the
+   * harness would skip the UPDATE tests for tables like orders (#106).
+   */
   readonly appUserPrivileges: readonly Privilege[];
   readonly columns: readonly ColumnInfo[];
   /** Qualified names of tenant tables this table references through FKs (for seeding order). */
@@ -114,6 +120,7 @@ interface ColumnRow {
   notnull: boolean;
   hasdefault: boolean;
   generated: boolean;
+  can_update: boolean;
   ref: string | null;
 }
 
@@ -208,7 +215,10 @@ export async function loadCatalog(owner: DatabaseHandle): Promise<Catalog> {
   const privs = await query<PrivRow>(
     owner,
     sql`
-      select c.oid::int as oid, pr.priv, has_table_privilege('app_user', c.oid, pr.priv) as ok
+      select c.oid::int as oid, pr.priv, case when pr.priv = 'UPDATE'
+                  then has_table_privilege('app_user', c.oid, 'UPDATE')
+                    or has_any_column_privilege('app_user', c.oid, 'UPDATE')
+                  else has_table_privilege('app_user', c.oid, pr.priv) end as ok
       from pg_class c
       cross join unnest(${pgArray(PRIVILEGES)}::text[]) as pr(priv)
       where c.oid = any(${oids}::oid[])
@@ -224,6 +234,7 @@ export async function loadCatalog(owner: DatabaseHandle): Promise<Catalog> {
              a.attnotnull as notnull,
              a.atthasdef as hasdefault,
              (a.attidentity <> '' or a.attgenerated <> '') as generated,
+             has_column_privilege('app_user', a.attrelid, a.attnum, 'UPDATE') as can_update,
              (select format('%s.%s', fn.nspname, fc.relname)
                 from pg_constraint k
                 join pg_class fc on fc.oid = k.confrelid
@@ -247,6 +258,7 @@ export async function loadCatalog(owner: DatabaseHandle): Promise<Catalog> {
         notNull: c.notnull,
         hasDefault: c.hasdefault,
         generated: c.generated,
+        appUserCanUpdate: c.can_update,
         referencesTable: c.ref,
       }));
     const dependsOn = [
@@ -312,6 +324,24 @@ function topologicalOrder(tables: readonly TenantTable[]): TenantTable[] {
     remaining = remaining.filter((t) => !done.has(t.qualified));
   }
   return result;
+}
+
+/**
+ * Column the UPDATE tests write: the tenant key when app_user may update it, otherwise
+ * the first column it may update (e.g. orders.status). Null when none (no UPDATE at all).
+ */
+export function updatableColumn(table: TenantTable): string | null {
+  const cols = table.columns.filter((c) => c.appUserCanUpdate);
+  return (
+    cols.find((c) => c.name === table.tenantKey)?.name ?? cols[0]?.name ?? null
+  );
+}
+
+/** app_user may rewrite the tenant key (needed for the "move a row to B" test). */
+export function canUpdateTenantKey(table: TenantTable): boolean {
+  return table.columns.some(
+    (c) => c.name === table.tenantKey && c.appUserCanUpdate,
+  );
 }
 
 /** Exact fail-closed predicate Postgres stores for `key = NULLIF(current_setting('app.store_id', true), '')::uuid`. */

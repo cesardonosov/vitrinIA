@@ -12,10 +12,12 @@ import {
 } from "../helpers";
 import {
   appUserPolicies,
+  canUpdateTenantKey,
   expectedPolicyExpression,
   loadCatalog,
   type TenantTable,
   uncoveredPrivileges,
+  updatableColumn,
 } from "./catalog";
 import { expectedRowsPerStore, seederFor } from "./seeders";
 
@@ -298,17 +300,24 @@ describe.each(catalog.tables)("tenant table $qualified", (t) => {
       });
     });
 
-    if (can("UPDATE")) {
+    const col = updatableColumn(t);
+    if (can("UPDATE") && col === null) {
+      it("grants UPDATE but exposes no updatable column (harness cannot test it)", () => {
+        expect.fail(`${label}: UPDATE granted but no updatable column found`);
+      });
+    } else if (can("UPDATE") && col !== null) {
+      // Column-level grants (orders: status, version, updated_at) write that column, not the key.
+      const target = sql.identifier(col);
       it("UPDATE on rows of B from context A affects 0 rows and B keeps its rows", async () => {
         const before = await withStoreTx(B, (tx) => count(tx, t, B));
         await withStoreTx(A, async (tx) => {
           await assertAppUser(tx);
           const r = await tx.execute(
-            sql`update ${rel(t)} set ${key(t)} = ${key(t)} where ${key(t)} = ${B}::uuid`,
+            sql`update ${rel(t)} set ${target} = ${target} where ${key(t)} = ${B}::uuid`,
           );
           expect(r.rowCount, `${label}: cross UPDATE row count`).toBe(0);
           const all = await tx.execute(
-            sql`update ${rel(t)} set ${key(t)} = ${key(t)}`,
+            sql`update ${rel(t)} set ${target} = ${target}`,
           );
           expect(
             all.rowCount,
@@ -380,7 +389,20 @@ describe.each(catalog.tables)("tenant table $qualified", (t) => {
       });
     }
 
-    if (can("UPDATE") && !t.isPartition) {
+    if (can("UPDATE") && !t.isPartition && !canUpdateTenantKey(t)) {
+      it("app_user cannot rewrite the tenant key (column grant excludes it)", async () => {
+        await expectPgError(
+          withStoreTx(A, (tx) =>
+            tx.execute(
+              sql`update ${rel(t)} set ${key(t)} = ${B}::uuid where ${key(t)} = ${A}::uuid`,
+            ),
+          ),
+          /permission denied/i,
+        );
+      });
+    }
+
+    if (can("UPDATE") && !t.isPartition && canUpdateTenantKey(t)) {
       it("UPDATE that moves an own row to B is rejected by WITH CHECK (G1)", async () => {
         const target = t.qualified === "public.stores" ? uuidv7() : B;
         await expectPgError(
