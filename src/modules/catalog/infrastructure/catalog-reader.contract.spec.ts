@@ -9,6 +9,10 @@ import { Result, type StoreId } from "@/shared/kernel";
  * in unit tests and the database adapter against the test Postgres. Ids are
  * adapter-specific (slugs in the seed, UUID v7 in the database), so the checks
  * compare content and the links between ids, never the ids themselves.
+ *
+ * `.spec.ts` on purpose: vitest only collects `*.test.ts`, so this file runs
+ * through the suites that import it, and dependency-cruiser skips it (it
+ * imports vitest). It lives in src/ because the Docker build ignores tests/.
  */
 
 export interface CatalogReaderFixture {

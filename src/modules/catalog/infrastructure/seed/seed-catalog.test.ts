@@ -2,12 +2,12 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { Result, StoreId } from "@/shared/kernel";
+import { EMPTY_CATALOG } from "../../application";
 import {
   CATALOG_A,
   CATALOG_B,
   catalogReaderContract,
-} from "../../../../../tests/contracts/catalog-reader";
-import { EMPTY_CATALOG } from "../../application";
+} from "../catalog-reader.contract.spec";
 import {
   KANUWIN_CATALOG,
   KANUWIN_DEMO_STORE_ID,

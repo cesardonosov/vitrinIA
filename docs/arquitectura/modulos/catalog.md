@@ -1,6 +1,6 @@
 # Módulo catalog
 
-Estado: Sprint 2 (VIT-179). Categorías, productos y variantes con precio de cada tienda, de solo lectura para la vitrina. Con VIT-183 el catálogo vive en Postgres (`categories`, `products`, `product_variants`, con RLS forzada; ver [`data-model.md`](../data-model.md)). El adaptador semilla sigue disponible y ambos pasan la misma suite de contrato (`tests/contracts/catalog-reader.ts`).
+Estado: Sprint 2 (VIT-179). Categorías, productos y variantes con precio de cada tienda, de solo lectura para la vitrina. Con VIT-183 el catálogo vive en Postgres (`categories`, `products`, `product_variants`, con RLS forzada; ver [`data-model.md`](../data-model.md)). El adaptador semilla sigue disponible y ambos pasan la misma suite de contrato (`src/modules/catalog/infrastructure/catalog-reader.contract.spec.ts`).
 
 ## Archivos
 

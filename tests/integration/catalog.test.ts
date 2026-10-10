@@ -3,6 +3,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { DatabaseHandle } from "@/infra/db/client";
 import { bindWithStoreTx, type WithStoreTx } from "@/infra/db/with-store-tx";
 import { uuidv7 } from "@/infra/uuid-v7";
+import {
+  CATALOG_A,
+  CATALOG_B,
+  type CatalogReaderFixture,
+  catalogReaderContract,
+} from "@/modules/catalog/infrastructure/catalog-reader.contract.spec";
 import { createDbCatalogReader } from "@/modules/catalog/infrastructure/db-catalog-reader";
 import { insertCatalog } from "@/modules/catalog/infrastructure/db-catalog-writer";
 import {
@@ -11,12 +17,6 @@ import {
   productVariants,
 } from "@/modules/catalog/infrastructure/schema";
 import { KANUWIN_CATALOG } from "@/modules/catalog/infrastructure/seed/kanuwin";
-import {
-  CATALOG_A,
-  CATALOG_B,
-  type CatalogReaderFixture,
-  catalogReaderContract,
-} from "../contracts/catalog-reader";
 import {
   expectPgError,
   openAppUser,
