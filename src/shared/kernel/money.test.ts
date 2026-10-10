@@ -68,6 +68,25 @@ describe("Money.of", () => {
   });
 });
 
+describe("negative zero", () => {
+  it("normalises -0 to 0 on construction and arithmetic", () => {
+    const fromOf = Money.of(-0, "CLP");
+    expect(fromOf.ok).toBe(true);
+    if (fromOf.ok) expect(fromOf.value.amount).toBe(0);
+
+    const diff = clp(5).subtract(clp(5));
+    expect(diff.ok).toBe(true);
+    if (diff.ok) expect(diff.value.amount).toBe(0);
+
+    const product = clp(-5).multiply(0);
+    expect(product.ok).toBe(true);
+    if (product.ok) {
+      expect(product.value.amount).toBe(0);
+      expect(product.value.toString()).toBe("0 CLP");
+    }
+  });
+});
+
 describe("Money.zero", () => {
   it("is the additive identity", () => {
     const zero = Money.zero("CLP");

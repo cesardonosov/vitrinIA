@@ -7,6 +7,6 @@ export {
   Money,
   type MoneyError,
 } from "./money";
-export { type Err, type Ok, Result } from "./result";
+export { type Err, type Ok, type OkValues, Result } from "./result";
 export { type InvalidStoreId, StoreId } from "./store-id";
 export { isUuidV7 } from "./uuid";
