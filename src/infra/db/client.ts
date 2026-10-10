@@ -1,5 +1,6 @@
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { logger } from "../logger";
 
 export type Database = NodePgDatabase;
 
@@ -28,9 +29,8 @@ export function createDatabase(options: DatabaseOptions): DatabaseHandle {
   });
   // An idle client error must not crash the process; the pool discards that client.
   // Log only the error code: never the message (may embed the URL) nor any user data.
-  // TODO(VIT-126): replace console.error with the pino logger once it exists.
   pool.on("error", (err: Error & { code?: string }) => {
-    console.error(`pg pool idle client error (code=${err.code ?? "unknown"})`);
+    logger.error({ event: "db.pool_idle_error", code: err.code ?? "unknown" });
   });
   const db = drizzle({ client: pool });
   return { db, pool, close: () => pool.end() };

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger } from "./logger";
 
 const FORBIDDEN_PUBLIC_NAME = /SECRET|KEY|TOKEN|PASSWORD/;
 
@@ -74,7 +75,10 @@ export function getEnv(): Env {
     cached = parseEnv();
   } catch (error) {
     if (error instanceof EnvValidationError) {
-      console.error(error.message);
+      logger.fatal(
+        { event: "env.invalid", variables: error.variables },
+        error.message,
+      );
       process.exit(1);
     }
     throw error;
