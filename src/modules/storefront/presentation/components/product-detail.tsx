@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { Product } from "@/modules/catalog/application";
-import { formatMoney } from "../format";
-import { WhatsAppButton } from "./whatsapp-button";
+import { AddToCart } from "../cart/add-to-cart";
+import { formatMoney, whatsappHref } from "../format";
 
 export interface ProductDetailProps {
   readonly product: Product;
@@ -10,7 +10,7 @@ export interface ProductDetailProps {
   readonly whatsappDigits?: string;
 }
 
-/** Product page body. Ordering by WhatsApp until the cart lands (VIT-184). */
+/** Product page body: formats, add to cart, details. */
 export function ProductDetail({
   product,
   categoryName,
@@ -63,33 +63,28 @@ export function ProductDetail({
             <p className="mt-3 text-body">{product.shortDescription}</p>
           </div>
 
-          <section aria-labelledby="formatos">
-            <h2 id="formatos" className="mb-2 text-body font-semibold">
-              {product.variants.length > 1 ? "Formatos" : "Formato"}
-            </h2>
-            <ul className="divide-y divide-border rounded-lg border border-border">
-              {product.variants.map((v) => (
-                <li
-                  key={v.id}
-                  className="flex min-h-touch items-center justify-between gap-3 px-4 py-2"
-                >
-                  <span>{v.label}</span>
-                  {showPrice ? (
-                    <span className="text-h3 font-bold">
-                      {formatMoney(v.price)}
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </section>
-
-          <WhatsAppButton
-            label="Pedir por WhatsApp"
-            message={`Hola, quiero pedir ${product.name}. Formatos: ${variantsText}.`}
-            whatsappDigits={whatsappDigits}
-            className="w-full"
+          <AddToCart
+            variants={product.variants.map((v) => ({
+              id: v.id,
+              label: v.label,
+              ...(showPrice ? { priceText: formatMoney(v.price) } : {}),
+            }))}
           />
+
+          {whatsappDigits ? (
+            <a
+              href={whatsappHref(
+                whatsappDigits,
+                `Hola, tengo una consulta sobre ${product.name} (${variantsText}).`,
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="-mt-2 inline-flex min-h-touch items-center justify-center gap-1 underline underline-offset-4"
+            >
+              ¿Dudas? Pregúntanos por WhatsApp
+              <span className="sr-only"> (abre WhatsApp)</span>
+            </a>
+          ) : null}
 
           {product.audience ? (
             <section aria-labelledby="para-quien">
