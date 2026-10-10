@@ -16,6 +16,13 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO products (id, store_id, category_id, slug, name, position, published, short_description)
 VALUES ('0199d0a0-0000-7000-8000-0000000e2d01', '0199d0a0-0000-7000-8000-00000000e2e1', '0199d0a0-0000-7000-8000-0000000e2c01', 'solo-otra-tienda', 'Producto de otra tienda', 0, true, 'Solo existe en la otra tienda.')
 ON CONFLICT (id) DO NOTHING;
+INSERT INTO store_configs (id, store_id, revision, schema_version, config)
+VALUES ('0199d0a0-0000-7000-8000-0000000e2f01', '0199d0a0-0000-7000-8000-00000000e2e1', 1, 1, '{"schemaVersion":1,"identity":{"name":"Otra tienda","tagline":"Tagline propio de otra tienda"},"theme":{"colors":{"primary":"#2a6f4f","background":"#ffffff","text":"#111111","onPrimary":"#ffffff","accent":"#c0392b"},"font":"system-sans","radius":"md"},"contact":{"whatsapp":"+56911112222"},"pages":{"home":{"sections":[{"type":"hero","props":{"title":"Bienvenido a Otra tienda","subtitle":"Contenido propio de la segunda tienda"}},{"type":"product-grid","props":{"title":"Catalogo de Otra","source":"all","limit":8}}]}},"features":{"showPrices":true,"showStock":false,"whatsappCheckout":true,"paymentLinkCheckout":false,"search":true}}'::jsonb)
+ON CONFLICT (store_id, revision) DO NOTHING;
+-- The storefront only lists published products with at least one variant.
+INSERT INTO product_variants (id, store_id, product_id, label, price_clp, position)
+VALUES ('0199d0a0-0000-7000-8000-0000000e2a01', '0199d0a0-0000-7000-8000-00000000e2e1', '0199d0a0-0000-7000-8000-0000000e2d01', '1 kg', 5000, 0)
+ON CONFLICT (id) DO NOTHING;
 COMMIT;
 
 BEGIN;

@@ -80,14 +80,29 @@ test("unknown and unverified hosts answer the same uniform 404 on every route", 
   for (const seen of signatures.values()) expect(seen.size).toBe(1);
 });
 
-test("a store without a published config does not leak its catalog", async ({
+test("the second store renders its own home and product, never Kanuwiñ's", async ({
   request,
 }) => {
-  for (const path of ["/", "/p/solo-otra-tienda"]) {
-    const response = await get(request, "otra.localhost", path);
-    expect(response.status(), path).toBe(404);
-    expect(await response.text()).not.toContain("Producto de otra tienda");
+  const home = await get(request, "otra.localhost", "/");
+  expect(home.status()).toBe(200);
+  const homeHtml = await home.text();
+  expect(homeHtml).toContain("Bienvenido a Otra tienda");
+  expect(homeHtml).toContain("Producto de otra tienda");
+  for (const kanuwin of ["Kanuwiñ", "Mezcla Loros Grandes", "56933089103"]) {
+    expect(homeHtml).not.toContain(kanuwin);
   }
+
+  const product = await get(request, "otra.localhost", "/p/solo-otra-tienda");
+  expect(product.status()).toBe(200);
+  expect(await product.text()).toContain("Producto de otra tienda");
+
+  // Kanuwiñ's own product is a 404 on the other store.
+  const foreign = await get(
+    request,
+    "otra.localhost",
+    "/p/mezcla-loros-grandes",
+  );
+  expect(foreign.status()).toBe(404);
 });
 
 test("the internal storefront segment is not reachable by path", async ({

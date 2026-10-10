@@ -17,13 +17,15 @@ import {
   orderItems,
   orders,
 } from "@/modules/orders/infrastructure/schema";
-import { createStaticStoreConfigReader } from "@/modules/store-config/infrastructure/static-store-config-reader";
+import { createDbStoreConfigReader } from "@/modules/store-config/infrastructure/db-store-config-reader";
+import { zodStoreConfigValidator } from "@/modules/store-config/infrastructure/zod/zod-store-config-validator";
 import { Result, type StoreId } from "@/shared/kernel";
 import {
   openAppUser,
   openMigrator,
   type SeededStore,
   seedStore,
+  seedStoreConfig,
   truncateAll,
   unique,
 } from "./helpers";
@@ -101,15 +103,15 @@ beforeAll(async () => {
   await insertCatalog(withStoreTx, B.id, KANUWIN_CATALOG);
   variantsA = await variantIds(A.id);
   variantsB = await variantIds(B.id);
+  await seedStoreConfig(app, A.id, config());
+  await seedStoreConfig(app, B.id, config());
   const resolve = bindResolveHost(app.db);
   deps = {
     hosts: { resolve },
-    configs: createStaticStoreConfigReader(
-      new Map([
-        [A.id, config()],
-        [B.id, config()],
-      ]),
-    ),
+    configs: createDbStoreConfigReader({
+      withStoreTx,
+      validator: zodStoreConfigValidator,
+    }),
     catalog: createDbCatalogReader(withStoreTx),
     orders: createDbOrderRepository({ withStoreTx, newCode: newOrderCode }),
     verifier: { verify: async () => true },

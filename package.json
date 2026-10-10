@@ -26,7 +26,7 @@
     "db:migrate": "drizzle-kit migrate",
     "db:migrate:test": "DATABASE_URL=\"$TEST_MIGRATOR_DATABASE_URL\" drizzle-kit migrate",
     "db:migrate:compose": "docker compose --env-file .env.local --profile tools run --rm migrate",
-    "db:seed:demo": "node --env-file-if-exists=.env.local scripts/seed-demo-guard.ts && docker compose --env-file .env.local exec -T postgres psql -U app_user -d vitrinia -q < infra/seed/demo.sql && docker compose --env-file .env.local exec -T postgres psql -U app_user -d vitrinia -q < infra/seed/demo-catalog.sql",
+    "db:seed:demo": "node --env-file-if-exists=.env.local scripts/seed-demo-guard.ts && docker compose --env-file .env.local exec -T postgres psql -U app_user -d vitrinia -q < infra/seed/demo.sql && docker compose --env-file .env.local exec -T postgres psql -U app_user -d vitrinia -q < infra/seed/demo-catalog.sql && docker compose --env-file .env.local exec -T postgres psql -U app_user -d vitrinia -q < infra/seed/demo-config.sql",
     "test:db:up": "docker compose -f docker-compose.test.yml up -d --wait",
     "test:db:down": "docker compose -f docker-compose.test.yml down -v",
     "test:integration": "vitest run --config vitest.integration.config.mts",
@@ -38,6 +38,7 @@
     "arch": "depcruise --config .dependency-cruiser.cjs src",
     "arch:fixtures": "cd tests/arch-fixtures && depcruise --config ../../.dependency-cruiser.cjs src",
     "arch:graph": "depcruise --config .dependency-cruiser.cjs --include-only \"^src/\" --output-type mermaid src > docs/arquitectura/dependencias.mmd",
+    "demo-config:sql": "WRITE_DEMO_CONFIG_SQL=1 vitest run src/modules/catalog/infrastructure/seed/demo-config-sql.test.ts",
     "demo-catalog:sql": "WRITE_DEMO_CATALOG_SQL=1 vitest run src/modules/catalog/infrastructure/seed/demo-sql.test.ts",
     "test:e2e": "PLAYWRIGHT_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-$HOME/.cache/ms-playwright} playwright test"
   },
