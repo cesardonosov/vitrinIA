@@ -1,15 +1,35 @@
 # Estado de VitrinIA
-Actualizado: 2026-10-10 15:20 (America/Santiago)
+Actualizado: 2026-10-10 (America/Santiago)
 
 ## Sprint actual
 Sprint 2 — Vitrina y pedidos · 2026-10-10 a 2026-10-17 · milestone "Sprint 2" (#2) · Cesar pidió avanzar el 2026-10-10
 Demo: Kanuwiñ se ve profesional en el celular vía túnel y registra pedidos.
+Estado: en curso; el catálogo, la vitrina por host, el carrito y los pedidos están en main, y no hay PRs abiertos. El milestone sigue abierto hasta que Cesar apruebe el cierre.
 Plan: `docs/sprints/sprint-02.md`. Sprint 1 cerrado 16/16 (`docs/sprints/sprint-01.md`).
 
+## Hecho en main (Sprint 2)
+Cesar, 2026-10-10: Claude mezcla sin preguntar los PRs con CI verde y aprobación de Security; el cierre del sprint y el entregable pasan por él.
+- VIT-179 (#79) módulo `catalog` con semilla de Kanuwiñ: PR #89
+- VIT-180 (#80, #77) componentes de vitrina y stories de `aves`: PR #90
+- VIT-181/182 (#81, #82), VIT-135/137 (#35, #37): `proxy.ts`, rewrite por host a `/s/<host>`, `pnpm db:seed:demo`, ADR-0011: PR #93
+- VIT-183 (#83) tablas de catálogo con RLS forzada y adaptador Drizzle: PR #99
+- VIT-184 (#84) carrito en el navegador: PR #96
+- VIT-185 (#85) medios de pago y despacho en el Store Config: PR #95
+- VIT-126 (#26) logs con pino y redacción de datos personales: PR #97
+- VIT-186 (#86) módulo `orders`: threat model (#98) y checkout con Turnstile y pedido por WhatsApp (#103, #104, #105)
+- Plan del sprint: PR #94
+
+Cerrados hoy: #79, #80, #83, #84, #85, #35, #37 (más #26, #77 y #86 antes).
+
 ## En curso
-- VIT-179 (#79) módulo catalog con semilla de Kanuwiñ (builder) — PR #89 en borrador
-- VIT-180 (#80) componentes de vitrina y story de `aves` (designer + builder) — PR #90 en borrador, sobre #89
-- VIT-181/182 (#81, #82) y VIT-135/137 (#35, #37): Kanuwiñ en `kanuwin.localhost`, `proxy.ts`, ADR-0011 — PR #93 en borrador, sobre #90; necesita Security y el OK de Cesar a ADR-0011
+- VIT-181 (#81): falta el E2E automatizado de la vitrina por host a 375 px y desktop (hoy solo verificación manual)
+- VIT-182 (#82): falta que `db:seed:demo` se niegue a correr contra producción y revisar que el contacto del PDF no esté en el repo
+- Seguimientos de Security sobre `orders` y carrito: #100 (`Object.hasOwn` en el carrito), #101 (rollback de 0001 por hash), #106 (arnés ve grants UPDATE por columna), #107 (confiar en `cf-connecting-ip` solo con flag de proxy de confianza), #108 (contacto en la huella de idempotencia), #109 (secretos y fixtures E2E, métrica de desafío fallido, `orders.md` v1.1)
+- VIT-191 (#91): Store Config persistido en la base de datos (hoy sale de memoria, solo Kanuwiñ)
+- VIT-192 (#92): caché host a tienda con TTL e invalidación
+- Pendientes del sprint sin empezar: VIT-187 (#87), VIT-188 (#88, puede pasar al Sprint 3), VIT-125 (#25), VIT-174 (#74), VIT-140 (#40), VIT-152 (#52), VIT-119 (#19) y la deuda de seguridad del Sprint 1
+- ADR-0011 sigue en estado Propuesto aunque #93 está en main: falta pasarlo a Aceptado con el OK de Cesar y la revisión de Security
+- First-load JS de la vitrina (~176 KB gzip) sobre el presupuesto de 100 KB: decide QA
 
 ## Seguimientos por crear como issue
 La creación de estos issues desde la sesión fue denegada por un permiso; quedan aquí para no perderlos.
@@ -46,7 +66,16 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 13. Store Config (ADR-0004 v3): resuelta (2026-10-09). Cesar confirmó todos los desvíos, incluido `onPrimary`.
 14. Mantenedor de tiendas para administradores: resuelta (2026-10-09). Queda en `docs/PENDIENTES.md` como desarrollo futuro, sin sprint asignado. Mientras no exista, las tiendas se aprueban a mano.
 
+15. Claves reales de Turnstile por entorno (desarrollo, staging, producción): sin ellas el checkout solo corre con la clave de prueba. Las crea Cesar en Cloudflare y las carga como secretos (dotenvx), nunca en el repo.
+16. DNS de `vitrinia.cl` delegado a Cloudflare: bloquea el túnel y la demo en un subdominio (plan B: `kanuwin.localhost` en el PC de Cesar).
+17. Datos reales de Kanuwiñ: medios de pago (link de Mercado Pago o Flow, datos de transferencia), zonas y precios de despacho, número de WhatsApp definitivo y las 2 fotos reales. Hoy son datos de demo marcados como provisorios.
+18. Ruleset de `main` con los checks requeridos (13 pasos en `docs/runbooks/ci.md`); sigue sin protección. Ver 11a.
+19. ADR-0011 (`proxy.ts`): OK de Cesar para pasarlo a Aceptado, ya que #93 está mezclado.
+
 ## Últimos cambios
+- 2026-10-10 · Sprint 2 · Reconciliación: #79, #80, #83, #84, #85, #35 y #37 cerrados; #81 y #82 siguen abiertos con lo que falta. TODO: 1
+- 2026-10-10 · VIT-186 · Pedidos por WhatsApp con Turnstile en main (PR #103, #104, #105); seguimientos #100, #101, #106–#109
+- 2026-10-10 · VIT-179/180/181/183/184/185 · En main (PR #89, #90, #93, #99, #96, #95); VIT-126 en #97
 - 2026-10-10 · VIT-181 · Kanuwiñ visible en `kanuwin.localhost` con `proxy.ts` y semilla local (PR #93, borrador)
 - 2026-10-10 · Sprint 2 · Plan, milestone y 12 issues nuevos (#79–#88, #91, #92); 19 abiertos movidos al sprint
 - 2026-10-10 · Sprint 1 · Cerrado 16/16; cierre en `docs/sprints/sprint-01.md` (PR #76), TODO: 2
