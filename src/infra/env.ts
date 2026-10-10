@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { logger } from "./logger";
+import { TURNSTILE_TEST_SECRET_KEY } from "./security/turnstile-keys";
 
 const FORBIDDEN_PUBLIC_NAME = /SECRET|KEY|TOKEN|PASSWORD/;
 
@@ -20,8 +21,47 @@ const schema = z
         .enum(["fatal", "error", "warn", "info", "debug", "trace"])
         .default("info"),
     ),
+    // Cloudflare Turnstile (checkout). Optional outside staging and production, where
+    // Cloudflare's public test keys apply (see security/turnstile.ts). Empty = absent.
+    TURNSTILE_SITE_KEY: z.preprocess(
+      emptyAsUndefined,
+      z.string().min(1).optional(),
+    ),
+    TURNSTILE_SECRET_KEY: z.preprocess(
+      emptyAsUndefined,
+      z.string().min(1).optional(),
+    ),
+    // Test-only override of the siteverify endpoint (E2E fake). Refused in staging and production.
+    TURNSTILE_VERIFY_URL: z.preprocess(
+      emptyAsUndefined,
+      z.url({ protocol: /^https?$/ }).optional(),
+    ),
   })
   .superRefine((source, ctx) => {
+    if (source.APP_ENV === "production" || source.APP_ENV === "staging") {
+      for (const name of [
+        "TURNSTILE_SITE_KEY",
+        "TURNSTILE_SECRET_KEY",
+      ] as const) {
+        if (source[name] === undefined) {
+          ctx.addIssue({ code: "custom", path: [name], message: "required" });
+        }
+      }
+      if (source.TURNSTILE_SECRET_KEY === TURNSTILE_TEST_SECRET_KEY) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["TURNSTILE_SECRET_KEY"],
+          message: "test key",
+        });
+      }
+      if (source.TURNSTILE_VERIFY_URL !== undefined) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["TURNSTILE_VERIFY_URL"],
+          message: "not allowed here",
+        });
+      }
+    }
     for (const name of Object.keys(source)) {
       if (name.startsWith("NEXT_PUBLIC_") && FORBIDDEN_PUBLIC_NAME.test(name)) {
         ctx.addIssue({

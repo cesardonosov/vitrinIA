@@ -46,3 +46,13 @@ export const KANUWIN_CATALOG: Catalog = parseSeedCatalog(seed, IMAGES);
 export const KANUWIN_HOW_TO_ORDER: string = seed.howToOrderText;
 
 export const KANUWIN_WHATSAPP: string = seed.contact.whatsapp;
+
+/** Demo delivery terms (provisional, invented for the demo at Cesar's request, 2026-10-09). */
+export const KANUWIN_DELIVERY = {
+  zones: seed.contact.deliveryTerms.zones.map((z) => ({
+    name: z.name,
+    priceClp: z.priceClp,
+    leadTime: z.leadTime,
+  })),
+  freeShippingFromClp: seed.contact.deliveryTerms.freeShippingFromClp,
+} as const;

@@ -1,5 +1,7 @@
 export const CSP_REPORT_PATH = "/api/csp-report";
 
+const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
+
 export function generateNonce(): string {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
@@ -9,7 +11,13 @@ export function generateNonce(): string {
 }
 
 export function buildCspReportOnly(nonce: string, isDev: boolean): string {
-  const scriptSrc = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'"];
+  // Cloudflare Turnstile (checkout, VIT-186): script, challenge iframe and its verification calls.
+  const scriptSrc = [
+    "'self'",
+    `'nonce-${nonce}'`,
+    "'strict-dynamic'",
+    TURNSTILE_ORIGIN,
+  ];
   if (isDev) scriptSrc.push("'unsafe-eval'");
   return [
     "default-src 'self'",
@@ -17,7 +25,8 @@ export function buildCspReportOnly(nonce: string, isDev: boolean): string {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: https:",
     "font-src 'self'",
-    "connect-src 'self'",
+    `connect-src 'self' ${TURNSTILE_ORIGIN}`,
+    `frame-src ${TURNSTILE_ORIGIN}`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

@@ -42,6 +42,9 @@ describe("proxy routing by host (VIT-137)", () => {
     const csp = call("kanuwin.localhost", "/api/csp-report");
     expect(csp.status).toBe(200);
     expect(rewriteOf(csp)).toBeNull();
+    const orders = call("kanuwin.localhost", "/api/orders");
+    expect(orders.status).toBe(200);
+    expect(rewriteOf(orders)).toBeNull();
   });
 
   it("other API routes 404 on store hosts but not on the portal", () => {

@@ -23,7 +23,10 @@ import {
  */
 const STOREFRONT_PREFIX = `/${STOREFRONT_SEGMENT}/`;
 const PUBLIC_FILE = /\.[a-z0-9]+$/i;
-const STOREFRONT_API_ROUTES: ReadonlySet<string> = new Set(["/api/csp-report"]);
+const STOREFRONT_API_ROUTES: ReadonlySet<string> = new Set([
+  "/api/csp-report",
+  "/api/orders",
+]);
 
 function route(
   request: NextRequest,
