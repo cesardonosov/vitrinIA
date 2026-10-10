@@ -135,6 +135,65 @@ export interface StorePages {
   readonly home: StorePage;
 }
 
+// ------------------------------------------------------------------ checkout
+//
+// How the store gets paid and delivers (ADR-0005 §4, VIT-185). Optional and
+// additive: a v1 config without `checkout` stays valid. VitrinIA never touches
+// funds; these are the seller's own payment links and bank details, shown to
+// the buyer after the order is placed.
+
+export const PAYMENT_METHOD_TYPES = [
+  "mercado-pago-link",
+  "flow-link",
+  "bank-transfer",
+] as const;
+
+export type PaymentMethodType = (typeof PAYMENT_METHOD_TYPES)[number];
+
+export interface PaymentLinkMethod {
+  readonly type: "mercado-pago-link" | "flow-link";
+  /** Canonical `https:` URL on the provider's allowlisted hosts. */
+  readonly url: string;
+}
+
+export interface BankTransferMethod {
+  readonly type: "bank-transfer";
+  /** Bank, account type and number, holder, RUT and email, as plain text. */
+  readonly details: string;
+}
+
+export type PaymentMethod = PaymentLinkMethod | BankTransferMethod;
+
+export interface DeliveryZone {
+  /** E.g. "Región Metropolitana". Unique within the store. */
+  readonly name: string;
+  /** Integer CLP, 0 = free. */
+  readonly priceClp: number;
+  /** E.g. "24 a 48 horas hábiles". */
+  readonly leadTime?: string;
+}
+
+export interface StoreDelivery {
+  readonly zones: ReadonlyArray<DeliveryZone>;
+  /** Orders at or above this subtotal ship free. */
+  readonly freeShippingFromClp?: number;
+  /** In-person pickup; `details` says where and when. */
+  readonly pickup?: { readonly details: string };
+}
+
+export interface StoreCheckout {
+  /** 1..3, at most one of each type, in display order. */
+  readonly paymentMethods: ReadonlyArray<PaymentMethod>;
+  /** At least one zone or pickup. */
+  readonly delivery: StoreDelivery;
+  /** The store issues facturas: the checkout offers RUT, razón social and giro. */
+  readonly invoice: boolean;
+}
+
+export const MAX_DELIVERY_ZONES = 10;
+export const MAX_DELIVERY_PRICE_CLP = 1_000_000;
+export const MAX_FREE_SHIPPING_FROM_CLP = 100_000_000;
+
 // ------------------------------------------------------------------ features
 //
 // Product switches. NOT security controls (ADR-0004 §9): no access, isolation,
@@ -165,6 +224,8 @@ export interface StoreConfigV1 {
   readonly contact: StoreContact;
   readonly pages: StorePages;
   readonly features: StoreFeatures;
+  /** Absent = order by WhatsApp only, no payment or delivery options shown. */
+  readonly checkout?: StoreCheckout;
 }
 
 /** The current version. Alias so callers do not pin `V1` everywhere. */

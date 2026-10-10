@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "identity": {
+    "name": "Tienda con checkout"
+  },
+  "theme": {
+    "colors": {
+      "primary": "#1d4ed8",
+      "background": "#ffffff",
+      "text": "#111827"
+    },
+    "font": "system-sans",
+    "radius": "md"
+  },
+  "contact": {
+    "whatsapp": "+56912345678"
+  },
+  "pages": {
+    "home": {
+      "sections": []
+    }
+  },
+  "features": {
+    "showPrices": true,
+    "showStock": false,
+    "whatsappCheckout": true,
+    "paymentLinkCheckout": true,
+    "search": true
+  },
+  "checkout": {
+    "paymentMethods": [
+      {
+        "type": "mercado-pago-link",
+        "url": "https://link.mercadopago.cl/tiendademo"
+      },
+      {
+        "type": "flow-link",
+        "url": "https://www.flow.cl/btn.php?token=abc123"
+      },
+      {
+        "type": "bank-transfer",
+        "details": "Banco Estado, cuenta RUT 12345678, Tienda Demo SpA, RUT 76.123.456-7, pagos@tiendademo.cl"
+      }
+    ],
+    "delivery": {
+      "zones": [
+        {
+          "name": "Región Metropolitana",
+          "priceClp": 3990,
+          "leadTime": "24 a 48 horas hábiles"
+        },
+        {
+          "name": "Resto de Chile (courier)",
+          "priceClp": 5990,
+          "leadTime": "2 a 5 días hábiles"
+        }
+      ],
+      "freeShippingFromClp": 40000,
+      "pickup": {
+        "details": "Retiro en Ñuñoa, de lunes a viernes de 10 a 18 h"
+      }
+    },
+    "invoice": true
+  }
+}
