@@ -1,20 +1,15 @@
 # Estado de VitrinIA
-Actualizado: 2026-10-10 13:30 (America/Santiago)
+Actualizado: 2026-10-10 15:20 (America/Santiago)
 
 ## Sprint actual
-Sprint 1 — Fundaciones y marca · cierre 2026-10-14 · 16/16 issues cerrados (falta que Cesar cierre el milestone) · plan aprobado por Cesar el 2026-10-07
-Demo: el proyecto levanta con un comando y pasa todas las barreras de CI.
-Plan: `docs/sprints/sprint-01.md`. Cierre: al final de ese mismo documento.
+Sprint 2 — Vitrina y pedidos · 2026-10-10 a 2026-10-17 · milestone "Sprint 2" (#2) · Cesar pidió avanzar el 2026-10-10
+Demo: Kanuwiñ se ve profesional en el celular vía túnel y registra pedidos.
+Plan: `docs/sprints/sprint-02.md`. Sprint 1 cerrado 16/16 (`docs/sprints/sprint-01.md`).
 
 ## En curso
-Mergeados en `main` el 2026-10-08 con el OK de Cesar: VIT-101 (#32), VIT-106 (#34), VIT-104 (#41), VIT-105 CI (#53), VIT-107 esquema con RLS (#46), VIT-109 arnés de cruce (#56), VIT-110 Store Config v1 (#66, reemplaza a #55) y VIT-115 headers y CSP (#42). El plan y los docs (#31) también. El 2026-10-09: #69, #70, #71, #72 y #73.
-
-Mergeados el 2026-10-10 con el OK de Cesar: #38 (VIT-102, `4cdf4a1`), #39 (VIT-108, `d79c4e0`) y #75 (README, runbook e informe de QA, `c3f150d`, Refs #14). VIT-113 cerrado tal como está.
-
-- Nada del Sprint 1 en curso. VIT-174 (#74) ADR-0003: las particiones no heredan RLS (architect) — sin PR, para el Sprint 2
-- Cierre del Sprint 1 (orchestrator) — PR #76 listo para revisar; el milestone "Sprint 1" lo cierra Cesar
-
-Ya no están en curso: VIT-102, VIT-103, VIT-108, VIT-111, VIT-112, VIT-113, VIT-114 y VIT-116 (todos cerrados).
+- VIT-179 (#79) módulo catalog con semilla de Kanuwiñ (builder) — PR #89 en borrador
+- VIT-180 (#80) componentes de vitrina y story de `aves` (designer + builder) — PR #90 en borrador, sobre #89
+- VIT-181/182 (#81, #82) y VIT-135/137 (#35, #37): Kanuwiñ en `kanuwin.localhost`, `proxy.ts`, ADR-0011 — PR #93 en borrador, sobre #90; necesita Security y el OK de Cesar a ADR-0011
 
 ## Seguimientos por crear como issue
 La creación de estos issues desde la sesión fue denegada por un permiso; quedan aquí para no perderlos.
@@ -22,8 +17,8 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 - Designer + Security (P3): decidir si los textos de la tienda admiten emojis con ZWJ, solo entre emojis (#66).
 - Builder (P2): cargar Gabarito y Albert Sans en el portal con `next/font` y aplicar `deriveTheme` al guardar el tema; depende de #68 (#65).
 - DevOps + Security (P3): agregar `build-storybook` y axe de las stories al CI (#65).
-- Builder + Security (P1, Sprint 2): tabla `order_contacts` con RLS por tienda, formulario de checkout por opción (despacho, retiro, factura) y job diario de retención (ADR-0005 y ADR-0010).
-- Builder (P2, Sprint 2): medios de pago múltiples en Store Config (Mercado Pago, Flow, transferencia) con lista de hosts permitidos (ADR-0005).
+- Builder + Security (P1, Sprint 2): `order_contacts`, checkout por opción y job de retención: creados como VIT-186 (#86) y VIT-188 (#88).
+- Builder (P2, Sprint 2): medios de pago múltiples en Store Config: creado como VIT-185 (#85).
 - Orchestrator (P2, Sprint 3): estado "pendiente de aprobación" para tiendas nuevas y cola de moderación para Cesar.
 
 - Orchestrator (P2, Sprint 2): D9 (aviso `middleware` -> `proxy`) ya está cubierto por VIT-135 (#35); no hace falta un issue nuevo. D6 (`main` sin protección) es acción de Cesar, ver "Esperando a Cesar" 11.
@@ -52,6 +47,8 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 14. Mantenedor de tiendas para administradores: resuelta (2026-10-09). Queda en `docs/PENDIENTES.md` como desarrollo futuro, sin sprint asignado. Mientras no exista, las tiendas se aprueban a mano.
 
 ## Últimos cambios
+- 2026-10-10 · VIT-181 · Kanuwiñ visible en `kanuwin.localhost` con `proxy.ts` y semilla local (PR #93, borrador)
+- 2026-10-10 · Sprint 2 · Plan, milestone y 12 issues nuevos (#79–#88, #91, #92); 19 abiertos movidos al sprint
 - 2026-10-10 · Sprint 1 · Cerrado 16/16; cierre en `docs/sprints/sprint-01.md` (PR #76), TODO: 2
 - 2026-10-10 · VIT-114 · Cerrado: `compose up --build --wait` desde cero en 3 min 22 s, 4 servicios sanos, FORCE RLS y roles sin bypass; seguimientos #77 y #78
 - 2026-10-10 · VIT-102/108 · Cesar dio el OK: #38, #39 y #75 en main; VIT-102 y VIT-108 cerrados
@@ -60,4 +57,3 @@ La creación de estos issues desde la sesión fue denegada por un permiso; queda
 - 2026-10-10 · VIT-103 · #45 cerrado: su contenido ya estaba en main; VIT-103 y VIT-116 salen de "En curso"
 - 2026-10-10 · VIT-174 · Nuevo (#74): ADR-0003, las particiones no heredan RLS
 - 2026-10-09 · VIT-116 · ADR-0009 mergeado (#72): deny de secretos; Security debe correr la matriz de §5 en sesión fresca
-- 2026-10-09 · — · Mergeados #71 (decisiones de Cesar y términos de la demo Kanuwiñ) y #73 (dominio `vitrinia.cl` confirmado)
