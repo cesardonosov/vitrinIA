@@ -29,12 +29,6 @@ import {
  * The CHECKs repeat the arithmetic of the use case so a bad write fails in the database too.
  */
 
-const UUID_V7 =
-  "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$";
-
-/** Largest amount any order column may hold (1 000 000 million CLP). */
-const MAX_AMOUNT_CLP = 1_000_000_000_000;
-
 export const ORDER_STATUSES = ["intent", "confirmed", "cancelled"] as const;
 export const ORDER_CHANNELS = ["whatsapp", "payment_link"] as const;
 export const ORDER_DELIVERY_TYPES = ["delivery", "pickup"] as const;
@@ -76,7 +70,10 @@ export const orders = pgTable(
     ),
     unique("orders_store_id_code_key").on(t.storeId, t.code),
     index("orders_store_created_idx").on(t.storeId, t.createdAt),
-    check("orders_id_uuid_v7", sql.raw(`id::text ~ '${UUID_V7}'`)),
+    check(
+      "orders_id_uuid_v7",
+      sql`id::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'`,
+    ),
     check("orders_code_format", sql`${t.code} ~ '^[A-Z2-9]{6,12}$'`),
     check(
       "orders_request_hash_format",
@@ -102,9 +99,9 @@ export const orders = pgTable(
     check("orders_currency_clp", sql`${t.currency} = 'CLP'`),
     check(
       "orders_amounts_range",
-      sql`${t.subtotalClp} BETWEEN 0 AND ${sql.raw(String(MAX_AMOUNT_CLP))}
-        AND ${t.shippingClp} BETWEEN 0 AND ${sql.raw(String(MAX_AMOUNT_CLP))}
-        AND ${t.totalClp} BETWEEN 0 AND ${sql.raw(String(MAX_AMOUNT_CLP))}`,
+      sql`${t.subtotalClp} BETWEEN 0 AND 1000000000000
+        AND ${t.shippingClp} BETWEEN 0 AND 1000000000000
+        AND ${t.totalClp} BETWEEN 0 AND 1000000000000`,
     ),
     check(
       "orders_total_is_subtotal_plus_shipping",
@@ -144,7 +141,10 @@ export const orderItems = pgTable(
       columns: [t.storeId, t.orderId],
       foreignColumns: [orders.storeId, orders.id],
     }).onDelete("cascade"),
-    check("order_items_id_uuid_v7", sql.raw(`id::text ~ '${UUID_V7}'`)),
+    check(
+      "order_items_id_uuid_v7",
+      sql`id::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'`,
+    ),
     check("order_items_position_range", sql`${t.position} BETWEEN 0 AND 49`),
     check(
       "order_items_product_name_length",
@@ -205,7 +205,10 @@ export const orderContacts = pgTable(
       columns: [t.storeId, t.orderId],
       foreignColumns: [orders.storeId, orders.id],
     }).onDelete("cascade"),
-    check("order_contacts_id_uuid_v7", sql.raw(`id::text ~ '${UUID_V7}'`)),
+    check(
+      "order_contacts_id_uuid_v7",
+      sql`id::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'`,
+    ),
     check(
       "order_contacts_name_length",
       sql`char_length(${t.name}) BETWEEN 1 AND 80`,
