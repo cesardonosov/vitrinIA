@@ -12,3 +12,11 @@
     outline-offset: 2px;
   }
 }
+
+/* Storefront theme scope (VIT-180): tokens derived from the store's validated
+   colours, computed here so the inline style never concatenates values. */
+.storefront-theme {
+  --color-surface: color-mix(in srgb, var(--color-text) 8%, var(--color-bg));
+  --color-border: color-mix(in srgb, var(--color-text) 22%, var(--color-bg));
+  --radius-lg: calc(var(--radius-md) * 2);
+}

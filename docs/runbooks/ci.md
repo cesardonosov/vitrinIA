@@ -34,7 +34,7 @@ Todas son `ERROR` y bloquean. Cada una tiene fixture positivo y negativo en `.se
 - `sql.raw` con argumento no literal o con plantilla interpolada.
 - `dangerouslySetInnerHTML`, `innerHTML=`, `outerHTML=`. Excepción única: el serializador JSON-LD aprobado en `src/shared/seo/json-ld.tsx` (cualquier cambio ahí lo revisa Security).
 - `eval`, `new Function`, `Function(...)`.
-- G8 (middleware nunca autoriza): leer con `.get("x-vitrinia-*" | "x-store-*" | "x-tenant-*" | "x-user-*" | "x-middleware-*" | "x-forwarded-host")` en `src/**` salvo `src/middleware.ts`. **Convención:** todo header que el middleware escriba para código posterior lleva el prefijo `x-vitrinia-`. Si Builder necesita otro nombre, se agrega al regex de la regla (pasa por Security).
+- G8 (middleware nunca autoriza): leer con `.get("x-vitrinia-*" | "x-store-*" | "x-tenant-*" | "x-user-*" | "x-middleware-*" | "x-forwarded-host")` en `src/**` salvo `src/proxy.ts` (antes `src/middleware.ts`, ADR-0011). **Convención:** todo header que el middleware escriba para código posterior lleva el prefijo `x-vitrinia-`. Si Builder necesita otro nombre, se agrega al regex de la regla (pasa por Security).
 
 `.semgrepignore` excluye `.semgrep/` porque los fixtures contienen violaciones a propósito.
 

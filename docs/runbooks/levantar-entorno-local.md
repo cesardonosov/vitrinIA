@@ -33,6 +33,7 @@ La imagen del `Dockerfile` es de desarrollo local, no la de producción.
    ```
    Compose solo lee `.env` por defecto; por eso hay que pasar `--env-file .env.local`. Sin las variables, Compose falla con el nombre de la que falta.
 4. Verificar: `docker compose --env-file .env.local ps` debe mostrar los 4 servicios `healthy`. App en http://localhost:3000, correos en http://localhost:8025.
+5. Tienda de demo: `pnpm db:migrate:compose` y luego `pnpm db:seed:demo`. Corre `infra/seed/demo.sql` dentro del Postgres de Docker como `app_user` (sin BYPASSRLS, con el tenant fijado igual que `withStoreTx`), es idempotente y termina mostrando `kanuwin.localhost -> <id>`. Abrir http://kanuwin.localhost:3000. Si muestra `NOT RESOLVED`, faltan las migraciones.
 
 ## Roles de base de datos (ADR-0003)
 

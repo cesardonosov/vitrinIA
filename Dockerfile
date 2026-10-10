@@ -28,6 +28,8 @@ COPY --from=build /app/node_modules ./node_modules
 # next start writes .next/cache at runtime, so the app user must own .next.
 COPY --from=build --chown=node:node /app/.next ./.next
 COPY --from=build /app/next.config.ts ./next.config.ts
+# Static files (demo product photos, VIT-182).
+COPY --from=build /app/public ./public
 USER node
 EXPOSE 3000
 CMD ["node_modules/.bin/next", "start", "-H", "0.0.0.0", "-p", "3000"]
