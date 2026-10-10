@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { StoreConfig } from "@/modules/store-config/application";
+import { CartLink } from "../cart/cart-link";
 import { storeThemeStyle } from "../theme";
 
 export interface StorefrontShellProps {
@@ -23,6 +24,7 @@ export function StorefrontShell({ config, children }: StorefrontShellProps) {
           >
             {identity.name}
           </a>
+          <CartLink />
         </div>
       </header>
       <main className="flex-1">{children}</main>
