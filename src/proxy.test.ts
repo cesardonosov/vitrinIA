@@ -62,6 +62,11 @@ describe("proxy routing by host (VIT-137)", () => {
     }
   });
 
+  it("public files are served even without a usable Host (image optimiser)", () => {
+    expect(call("", "/demo/kanuwin/a.webp").status).toBe(200);
+    expect(call("kanuwin.localhost", "/api/auth/x.json").status).toBe(404);
+  });
+
   it("a malformed host is a 404", () => {
     expect(call("kanuwiñ.localhost", "/").status).toBe(404);
   });

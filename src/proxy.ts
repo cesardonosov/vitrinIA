@@ -37,12 +37,15 @@ function route(
   ) {
     return "not-found";
   }
+  const isApi = pathname === "/api" || pathname.startsWith("/api/");
+  // Public files are the same on every host. The image optimiser fetches
+  // them internally without the browser's Host, so this goes before the host check.
+  if (!isApi && PUBLIC_FILE.test(pathname)) return undefined;
   if (host === undefined) return "not-found";
   if (isPortalHost(host)) return undefined;
-  if (pathname === "/api" || pathname.startsWith("/api/")) {
+  if (isApi) {
     return STOREFRONT_API_ROUTES.has(pathname) ? undefined : "not-found";
   }
-  if (PUBLIC_FILE.test(pathname)) return undefined;
   const url = request.nextUrl.clone();
   url.pathname = `${STOREFRONT_PREFIX}${host}${pathname === "/" ? "" : pathname}`;
   return url;
