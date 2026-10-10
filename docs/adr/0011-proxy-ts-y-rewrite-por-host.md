@@ -1,9 +1,9 @@
 # ADR-0011: `proxy.ts` en lugar de `middleware.ts` y rewrite por host a `/s/<host>`
 
-- Estado: Propuesto
+- Estado: Aceptado
 - Fecha: 2026-10-10
 - Decide: Cesar (aprobación requerida: sí — cambia `docs/VITRINIA.md` §6.4, archivo protegido)
-- Aprobación de Cesar: la migración a `proxy.ts` se decidió el 2026-10-09 ("Esperando a Cesar" 9, recomendación A). Falta su OK a este ADR y al cambio de §6.4, que van en el mismo PR.
+- Aprobación de Cesar: 2026-10-10, "Si, mezcla" sobre los PRs #89, #90, #93 y #94; cubre este ADR y el cambio de `docs/VITRINIA.md` §6.4 que iban en #93.
 - Issues: VIT-135 (#35), VIT-137 (#37); se implementa en VIT-181 (#81)
 - Zona sensible: sí (tenancy) — requiere revisión de Security antes de pasar a Aceptado
 
