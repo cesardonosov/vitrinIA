@@ -2,7 +2,12 @@ import { sql } from "drizzle-orm";
 import { createDatabase, type DatabaseHandle } from "@/infra/db/client";
 import { bindWithStoreTx } from "@/infra/db/with-store-tx";
 import { uuidv7 } from "@/infra/uuid-v7";
-import { domains, stores } from "@/modules/store-config/infrastructure/schema";
+import type { StoreConfig } from "@/modules/store-config/application";
+import {
+  domains,
+  storeConfigs,
+  stores,
+} from "@/modules/store-config/infrastructure/schema";
 import { StoreId } from "@/shared/kernel";
 import { requireTestUrl } from "./test-url";
 
@@ -54,6 +59,31 @@ export async function seedStore(
     });
   });
   return { id, slug, host, domainId };
+}
+
+/**
+ * Stores `config` as revision `revision` of the store, through withStoreTx as app_user.
+ * `config` is typed `unknown` on purpose: tests also store invalid and legacy documents
+ * (the reader must refuse them), and `schema_version` mirrors what the document says.
+ */
+export async function seedStoreConfig(
+  handle: DatabaseHandle,
+  storeId: StoreId,
+  config: StoreConfig | Record<string, unknown>,
+  revision = 1,
+): Promise<void> {
+  const schemaVersion = Number(
+    (config as { schemaVersion?: unknown }).schemaVersion ?? 1,
+  );
+  await bindWithStoreTx(handle.db)(storeId, async (tx) => {
+    await tx.insert(storeConfigs).values({
+      id: uuidv7(),
+      storeId,
+      revision,
+      schemaVersion,
+      config,
+    });
+  });
 }
 
 export async function truncateAll(owner: DatabaseHandle): Promise<void> {

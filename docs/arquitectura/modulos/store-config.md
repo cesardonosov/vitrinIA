@@ -1,6 +1,6 @@
 # Módulo store-config
 
-Estado: Sprint 1 (VIT-107 + VIT-110). Contiene las tablas raíz de tenancy `stores` y `domains` (VIT-107) y el contrato del **Store Config v1** validado con Zod y versionado (VIT-110, ADR-0004 v3). La persistencia del config en `jsonb` y sus casos de uso de escritura (con `audit_log`) llegan en Sprint 2. Contrato de seguridad: [`docs/security/threat-models/tenancy.md`](../../security/threat-models/tenancy.md) §5 (C1 a C15) y §9, ADR-0003 y ADR-0004.
+Estado: Sprint 2 (VIT-107, VIT-110, VIT-191). Contiene las tablas raíz de tenancy `stores` y `domains` (VIT-107), el contrato del **Store Config v1** validado con Zod y versionado (VIT-110, ADR-0004 v3) y su **persistencia por tienda** en `store_configs` (VIT-191). Los casos de uso de escritura (portal, con `audit_log`) llegan en Sprint 3. Contrato de seguridad: [`docs/security/threat-models/tenancy.md`](../../security/threat-models/tenancy.md) §5 (C1 a C15) y §9, ADR-0003 y ADR-0004.
 
 ## Archivos
 
@@ -24,6 +24,9 @@ Estado: Sprint 1 (VIT-107 + VIT-110). Contiene las tablas raíz de tenancy `stor
 | `src/modules/store-config/infrastructure/schema.ts` | Tablas Drizzle `stores` y `domains` (columnas, checks, únicos) |
 | `drizzle/migrations/0000_tenancy_base.sql` | Migración: tablas generadas + sección escrita a mano (RLS, grants, `resolve_host`) |
 | `drizzle/rollbacks/0000_tenancy_base.down.sql` | Rollback (destruye datos: en producción, backup + migración correctiva) |
+| `src/modules/store-config/infrastructure/db-store-config-reader.ts` | Adaptador Postgres del puerto `StoreConfigReader` (VIT-191): lee la mayor `revision` de la tienda dentro de `withStoreTx` y la pasa por `parseStoreConfig` |
+| `drizzle/migrations/0003_store_configs.sql` + `drizzle/rollbacks/0003_store_configs.down.sql` | Tabla `store_configs` con FORCE RLS (política con `USING` y `WITH CHECK`) y su rollback |
+| `src/modules/catalog/infrastructure/seed/{kanuwin-config,demo-config-sql}.ts` | Config de Kanuwiñ y generador de `infra/seed/demo-config.sql` (`pnpm demo-config:sql`) |
 | `src/infra/db/client.ts` | `createDatabase()`: pool `pg` + Drizzle. Solo con la URL de `app_user` |
 | `src/infra/db/with-store-tx.ts` | `withStoreTx(storeId, fn)`: **la única puerta** a tablas de tienda |
 | `src/infra/uuid-v7.ts` | `uuidv7()`: generador de ids (el kernel solo valida) |
@@ -131,6 +134,14 @@ El slug vive en `stores.slug` (VIT-107), no dentro del `jsonb`; las reglas sí v
 - El registro de componentes de `storefront` (Sprint 2) debe cubrir exactamente `SECTION_TYPES`; ese test vive en `storefront`.
 - La skill `create-preset` describe `pages.home.sections[]` con `component`/`variant`; el contrato real usa `type`/`props` (ADR-0004 §1). Ajustar la skill (Orchestrator).
 - Fuentes: solo stacks de sistema. Agregar una fuente empaquetada es tarea del Designer (id en `FONT_IDS` + archivo self-hosted en `storefront`).
+
+## Store Config en la base de datos (VIT-191)
+
+- **Tabla** `store_configs` (ver `docs/arquitectura/data-model.md`): `config jsonb`, `schema_version`, `revision`; la vitrina sirve la `revision` mayor de la tienda. Entra en el arnés de cruce (`seeders.ts` tiene su seeder porque el `jsonb` debe cumplir el CHECK de forma) y en `tests/integration/store-configs.test.ts`.
+- **Lectura** (`createDbStoreConfigReader`): `withStoreTx(storeId)` + filtro explícito por `store_id` + comprobación de que la fila devuelta es de esa tienda; el `jsonb` es **no confiable** y pasa por `parseStoreConfig` (migra en memoria, no reescribe la fila, y valida estricto). Si no parsea (clave desconocida, contraste insuficiente, `schemaVersion` más nueva que el build) devuelve `undefined`: la vitrina responde el mismo 404 sin datos, no hay render parcial ni retroceso a una revisión anterior. El cableado en `container.ts` registra `store_config.invalid` con `storeId` y el código del error, nunca el contenido.
+- **Escritura**: hoy solo la semilla local. Todo escritor debe pasar el config por `parseStoreConfig` antes del `INSERT` (misma regla "dos validaciones por diseño").
+- **Semilla**: `pnpm db:seed:demo` carga `infra/seed/demo-config.sql` (generado desde `buildKanuwinDemoConfig`, un test falla si queda desactualizado). Es idempotente: con el mismo config no cambia nada; con uno distinto sobrescribe la revisión 1 y sube `version`.
+- **Fuera de scope**: edición desde el portal y `audit_log` (Sprint 3).
 
 ## Pendiente conocido (tenancy)
 

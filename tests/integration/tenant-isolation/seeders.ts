@@ -11,7 +11,12 @@ import {
   orderItems,
   orders,
 } from "@/modules/orders/infrastructure/schema";
-import { domains, stores } from "@/modules/store-config/infrastructure/schema";
+import { ROPA_PRESET } from "@/modules/store-config/application";
+import {
+  domains,
+  storeConfigs,
+  stores,
+} from "@/modules/store-config/infrastructure/schema";
 import type { StoreId } from "@/shared/kernel";
 import type { ColumnInfo, TenantTable } from "./catalog";
 
@@ -59,6 +64,17 @@ export const seeders: Readonly<Record<string, Seeder>> = {
       storeId,
       host: `${storeLabel(storeId)}-${n}.vitrinia.cl`,
       verifiedAt: new Date(),
+    });
+  },
+  // Store Config (VIT-191): one revision per row; the jsonb must satisfy the shape CHECK
+  // (an object whose schemaVersion equals schema_version), so the generic '{}' would not do.
+  "public.store_configs": async (tx, storeId, n) => {
+    await tx.insert(storeConfigs).values({
+      id: uuidv7(),
+      storeId,
+      revision: n,
+      schemaVersion: ROPA_PRESET.schemaVersion,
+      config: ROPA_PRESET,
     });
   },
   // Children pick a parent of the same store: RLS shows only this store's rows,
