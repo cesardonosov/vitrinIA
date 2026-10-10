@@ -6,15 +6,64 @@ import {
 } from "@/modules/store-config/application";
 import { zodStoreConfigValidator } from "@/modules/store-config/infrastructure/zod/zod-store-config-validator";
 import { Result, StoreId } from "@/shared/kernel";
-import checkoutFixture from "../../../../tests/fixtures/store-config/v1/checkout.json" with {
-  type: "json",
-};
 import { idempotencyConflict } from "../domain/errors";
 import type { OrderDraft, SavedOrder } from "../domain/order";
 import { clp, V1, V2 } from "../domain/test-fixtures.spec";
 import type { PlaceOrderDeps } from "./place-order";
 import type { OrderLogFields } from "./ports/order-log";
 import type { OrderRepository } from "./ports/order-repository";
+
+/** Store Config v1 with a checkout block (copy of tests/fixtures/store-config/v1/checkout.json:
+ * src/ cannot import tests/, the Docker build ignores it). */
+const checkoutFixture = {
+  schemaVersion: 1,
+  identity: { name: "Tienda con checkout" },
+  theme: {
+    colors: { primary: "#1d4ed8", background: "#ffffff", text: "#111827" },
+    font: "system-sans",
+    radius: "md",
+  },
+  contact: { whatsapp: "+56912345678" },
+  pages: { home: { sections: [] } },
+  features: {
+    showPrices: true,
+    showStock: false,
+    whatsappCheckout: true,
+    paymentLinkCheckout: true,
+    search: true,
+  },
+  checkout: {
+    paymentMethods: [
+      {
+        type: "mercado-pago-link",
+        url: "https://link.mercadopago.cl/tiendademo",
+      },
+      { type: "flow-link", url: "https://www.flow.cl/btn.php?token=abc123" },
+      {
+        type: "bank-transfer",
+        details:
+          "Banco Estado, cuenta RUT 12345678, Tienda Demo SpA, RUT 76.123.456-7, pagos@tiendademo.cl",
+      },
+    ],
+    delivery: {
+      zones: [
+        {
+          name: "Región Metropolitana",
+          priceClp: 3990,
+          leadTime: "24 a 48 horas hábiles",
+        },
+        {
+          name: "Resto de Chile (courier)",
+          priceClp: 5990,
+          leadTime: "2 a 5 días hábiles",
+        },
+      ],
+      freeShippingFromClp: 40000,
+      pickup: { details: "Retiro en Ñuñoa, de lunes a viernes de 10 a 18 h" },
+    },
+    invoice: true,
+  },
+};
 
 /** Test doubles for the orders application tests. Not exported by the module. */
 function storeId(raw: string): StoreId {
