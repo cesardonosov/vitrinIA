@@ -1,6 +1,6 @@
 import { Writable } from "node:stream";
 import { describe, expect, it } from "vitest";
-import { createLogger, REDACTED, scrub } from "./logger";
+import { createLogger, REDACTED, scrub, TRUNCATED } from "./logger";
 
 function capture(level = "trace") {
   const lines: string[] = [];
@@ -99,6 +99,30 @@ describe("logger", () => {
     expectNoPersonalData(output());
   });
 
+  it("scrubs an Error under any key, including pg's enumerable detail", () => {
+    const { log, output } = capture();
+    const pgError = Object.assign(new Error("duplicate key value"), {
+      code: "23505",
+      detail: `Key (email)=(${EMAIL}) already exists.`,
+      table: "order_contacts",
+    });
+    log.error({ error: pgError, nested: { cause: pgError } });
+    const line = JSON.parse(output());
+    expect(line.error).toEqual({
+      type: "Error",
+      code: "23505",
+      message: "duplicate key value",
+    });
+    expectNoPersonalData(output());
+  });
+
+  it("drops values nested deeper than it scrubs", () => {
+    const { log, output } = capture();
+    log.info({ a: { b: { c: { d: { e: { f: EMAIL } } } } } });
+    expect(output()).toContain(TRUNCATED);
+    expectNoPersonalData(output());
+  });
+
   it("drops lines below the configured level", () => {
     const { log, output } = capture("warn");
     log.info({ event: "x" });
@@ -135,6 +159,11 @@ describe("scrub", () => {
     expect(scrub("link https://x.cl/m?token=zzz")).toBe(
       `link https://x.cl/m?token=${REDACTED}`,
     );
+  });
+
+  it("does not mistake id fragments for phones", () => {
+    const text = "request r-912345678 store abc-912345678x";
+    expect(scrub(text)).toBe(text);
   });
 
   it("leaves ids, counts and timestamps alone", () => {

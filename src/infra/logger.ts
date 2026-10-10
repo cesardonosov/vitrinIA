@@ -44,7 +44,8 @@ const REDACT_PATHS = SENSITIVE_KEYS.flatMap((key) => {
 // (a free-text message, an error message that echoes input).
 const EMAIL = /[\w.+-]+@[\w-]+(?:\.[\w-]+)*/g;
 // Chilean numbers, with or without +56 and separators: +56 9 1234 5678, 912345678.
-const PHONE = /(?<![\d+])(?:\+?56[\s.-]?)?9[\s.-]?\d{4}[\s.-]?\d{4}\b/g;
+// Not inside ids: no word character, `+` or `-` right before, none right after.
+const PHONE = /(?<![\w+-])(?:\+?56[\s.-]?)?9[\s.-]?\d{4}[\s.-]?\d{4}(?![\w-])/g;
 
 // Credentials inside URLs: postgres://user:pass@host and ?token=, ?code= (magic links).
 const DB_URL = /postgres(?:ql)?:\/\/[^\s"'<>]+/g;
@@ -63,12 +64,17 @@ export function scrub(value: string): string {
     .replace(PHONE, SCRUBBED_PHONE);
 }
 
+export const TRUNCATED = "[truncated]";
+const MAX_DEPTH = 4;
+
 function scrubDeep(value: unknown, depth = 0): unknown {
   if (typeof value === "string") return scrub(value);
-  if (depth > 4 || value === null || typeof value !== "object") return value;
-  // Errors are serialized (and scrubbed) by serializeError under `err`. Anywhere
-  // else JSON keeps only their enumerable fields, never message or stack.
-  if (value instanceof Error) return value;
+  if (value === null || typeof value !== "object") return value;
+  // Fail closed: anything nested deeper than we scrub is dropped, not logged raw.
+  if (depth > MAX_DEPTH) return TRUNCATED;
+  // An Error under any key: its enumerable fields (pg's `detail`, `table`...)
+  // can echo user input, so it gets the same treatment as `err`.
+  if (value instanceof Error) return serializeError(value);
   if (Array.isArray(value)) return value.map((v) => scrubDeep(v, depth + 1));
   const out: Record<string, unknown> = {};
   for (const [key, v] of Object.entries(value))
