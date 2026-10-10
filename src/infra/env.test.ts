@@ -78,4 +78,58 @@ describe("parseEnv", () => {
       parseEnv({ ...valid, NEXT_PUBLIC_BASE_DOMAIN: "vitrinia.cl" }),
     ).not.toThrow();
   });
+
+  describe("Turnstile (checkout)", () => {
+    const prod = { ...valid, APP_ENV: "production" };
+    const keys = {
+      TURNSTILE_SITE_KEY: "0x4AAAreal",
+      TURNSTILE_SECRET_KEY: "0x4AAAsecret",
+    };
+
+    it("is optional in development and test", () => {
+      expect(parseEnv(valid).TURNSTILE_SECRET_KEY).toBeUndefined();
+      expect(
+        parseEnv({ ...valid, TURNSTILE_SITE_KEY: "", TURNSTILE_VERIFY_URL: "" })
+          .TURNSTILE_SITE_KEY,
+      ).toBeUndefined();
+    });
+
+    it("is required in production and staging", () => {
+      expect(failure(prod).variables).toEqual([
+        "TURNSTILE_SECRET_KEY",
+        "TURNSTILE_SITE_KEY",
+      ]);
+      expect(failure({ ...prod, APP_ENV: "staging" }).variables).toEqual([
+        "TURNSTILE_SECRET_KEY",
+        "TURNSTILE_SITE_KEY",
+      ]);
+      expect(parseEnv({ ...prod, ...keys }).TURNSTILE_SECRET_KEY).toBe(
+        "0x4AAAsecret",
+      );
+    });
+
+    it("production refuses Cloudflare's public test secret and the verify override", () => {
+      expect(
+        failure({
+          ...prod,
+          ...keys,
+          TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+        }).variables,
+      ).toEqual(["TURNSTILE_SECRET_KEY"]);
+      expect(
+        failure({
+          ...prod,
+          ...keys,
+          TURNSTILE_VERIFY_URL: "http://127.0.0.1:9/x",
+        }).variables,
+      ).toEqual(["TURNSTILE_VERIFY_URL"]);
+    });
+
+    it("does not leak the secret value in the error", () => {
+      expect(
+        failure({ ...prod, ...keys, TURNSTILE_VERIFY_URL: "http://x.y/z" })
+          .message,
+      ).not.toContain("0x4AAAsecret");
+    });
+  });
 });
