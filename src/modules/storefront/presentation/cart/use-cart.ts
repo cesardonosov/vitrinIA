@@ -63,3 +63,9 @@ export function useCart(): readonly [
   );
   return [cart, update] as const;
 }
+
+/** Actions without subscribing to the cart (no re-render when it changes). */
+export function useCartActions(): { readonly clear: () => void } {
+  const clear = useCallback(() => write(EMPTY), []);
+  return { clear };
+}

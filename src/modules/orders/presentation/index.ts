@@ -1,2 +1,2 @@
-/** Public presentation surface of the orders module, used by src/app routes. */
+/** Server-side presentation surface of the orders module (route handlers). */
 export { createPlaceOrderHandler } from "./http/place-order-handler";
