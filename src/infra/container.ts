@@ -110,3 +110,8 @@ export const ordersDeps: PlaceOrderDeps = {
 export function turnstileSiteKey(): string {
   return resolveTurnstileKeys(getEnv()).siteKey;
 }
+
+/** Edge whose client-address headers the checkout may trust (`TRUSTED_PROXY`), if any. */
+export function trustedProxy(): "cloudflare" | undefined {
+  return getEnv().TRUSTED_PROXY === "cloudflare" ? "cloudflare" : undefined;
+}

@@ -1,9 +1,20 @@
+import { readFileSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
 
 /**
  * Cart -> order -> WhatsApp on the Kanuwiñ demo store (VIT-186, threat model orders O16, O17,
  * O19, O20). The viewport comes from the project: 375 px first, then desktop.
  */
+
+/** wa.me path of the seeded store: its WhatsApp number (KANUWIN_WHATSAPP) as digits. */
+const SELLER_DIGITS = (
+  JSON.parse(
+    readFileSync(
+      "src/modules/catalog/infrastructure/seed/kanuwin.json",
+      "utf8",
+    ),
+  ) as { contact: { whatsapp: string } }
+).contact.whatsapp.replace(/\D/g, "");
 
 const SENTINELS = [
   "comprador-centinela@ejemplo.cl",
@@ -106,7 +117,7 @@ test("cart to WhatsApp: the server prices the order and opens the seller's wa.me
   await page.waitForURL("https://wa.me/**");
   const url = new URL(waUrl);
   expect(url.origin).toBe("https://wa.me");
-  expect(url.pathname).toBe("/56933089103");
+  expect(url.pathname).toBe(`/${SELLER_DIGITS}`);
   const message = url.searchParams.get("text") ?? "";
   expect(message).toContain("Mezcla");
   expect(message).toContain("Verifica el pedido con este código.");

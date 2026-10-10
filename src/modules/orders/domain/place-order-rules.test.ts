@@ -369,7 +369,59 @@ describe("priceOrder (O1, O4, O5)", () => {
     );
   });
 
-  it("fingerprint ignores line order and contact, not quantities or zone", () => {
+  it("fingerprint changes when the buyer corrects the contact, not when only spacing differs (issue 108)", () => {
+    const base = price(request());
+    const spaced = price(
+      request({
+        contact: { name: "  Ana   Pérez ", phone: "912345678" },
+      }),
+    );
+    const otherPhone = price(
+      request({ contact: { name: "Ana Pérez", phone: "987654321" } }),
+    );
+    const withEmail = price(
+      request({
+        contact: {
+          name: "Ana Pérez",
+          phone: "912345678",
+          email: "ana@example.cl",
+        },
+      }),
+    );
+    if (
+      !Result.isOk(base) ||
+      !Result.isOk(spaced) ||
+      !Result.isOk(otherPhone) ||
+      !Result.isOk(withEmail)
+    )
+      throw new Error("price");
+    expect(spaced.value.fingerprint).toBe(base.value.fingerprint);
+    expect(otherPhone.value.fingerprint).not.toBe(base.value.fingerprint);
+    expect(withEmail.value.fingerprint).not.toBe(base.value.fingerprint);
+  });
+
+  it("fingerprint changes when the address changes", () => {
+    const at = (street: string) =>
+      price(
+        request({
+          delivery: {
+            type: "delivery",
+            zone: "Región Metropolitana",
+            address: {
+              region: "Región Metropolitana de Santiago",
+              commune: "Ñuñoa",
+              street,
+            },
+          },
+        }),
+      );
+    const a = at("Av. Grecia 100");
+    const b = at("Av. Grecia 200");
+    if (!Result.isOk(a) || !Result.isOk(b)) throw new Error("price");
+    expect(a.value.fingerprint).not.toBe(b.value.fingerprint);
+  });
+
+  it("fingerprint ignores line order, not quantities or zone", () => {
     const a = price(
       request({
         lines: [
@@ -384,7 +436,6 @@ describe("priceOrder (O1, O4, O5)", () => {
           { variantId: V2, quantity: 2 },
           { variantId: V1, quantity: 1 },
         ],
-        contact: { name: "Otra persona", phone: "987654321" },
       }),
     );
     const c = price(

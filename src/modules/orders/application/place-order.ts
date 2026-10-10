@@ -126,7 +126,10 @@ export async function placeOrder(
   }
 
   if (!(await deps.verifier.verify(input.humanToken, input.clientKey))) {
-    deps.log.warn("security.human_verification_failed", { store_id: storeId });
+    deps.log.warn("security.human_verification_failed", {
+      store_id: storeId,
+      client: input.clientKey,
+    });
     return Result.err(humanVerificationFailed());
   }
 

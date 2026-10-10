@@ -44,7 +44,7 @@ export function checkoutErrorMessage(code: string | undefined): string {
     case "VERIFICATION_FAILED":
       return "No pudimos verificar que eres una persona. Vuelve a intentar.";
     case "IDEMPOTENCY_CONFLICT":
-      return "Tu carrito cambió desde el último intento. Vuelve a enviar el pedido.";
+      return "Tus datos o tu carrito cambiaron desde el último intento. Vuelve a enviar el pedido.";
     case "NOT_FOUND":
       return "Esta tienda todavía no recibe pedidos en línea.";
     case "INVALID_ORDER":
