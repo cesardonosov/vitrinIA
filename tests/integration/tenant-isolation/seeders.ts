@@ -1,6 +1,11 @@
 import { sql } from "drizzle-orm";
 import type { StoreTx } from "@/infra/db/with-store-tx";
 import { uuidv7 } from "@/infra/uuid-v7";
+import {
+  categories,
+  products,
+  productVariants,
+} from "@/modules/catalog/infrastructure/schema";
 import { domains, stores } from "@/modules/store-config/infrastructure/schema";
 import type { StoreId } from "@/shared/kernel";
 import type { ColumnInfo, TenantTable } from "./catalog";
@@ -49,6 +54,38 @@ export const seeders: Readonly<Record<string, Seeder>> = {
       storeId,
       host: `${storeLabel(storeId)}-${n}.vitrinia.cl`,
       verifiedAt: new Date(),
+    });
+  },
+  // Children pick a parent of the same store: RLS shows only this store's rows,
+  // and the composite FK (store_id, parent_id) would refuse anything else.
+  "public.products": async (tx, storeId, n) => {
+    const [category] = await tx
+      .select({ id: categories.id })
+      .from(categories)
+      .limit(1);
+    if (!category) throw new Error("seed categories before products");
+    await tx.insert(products).values({
+      id: uuidv7(),
+      storeId,
+      categoryId: category.id,
+      slug: `${storeLabel(storeId)}-p${n}`,
+      name: `Producto ${n}`,
+      shortDescription: "Semillas de prueba",
+      published: true,
+    });
+  },
+  "public.product_variants": async (tx, storeId, n) => {
+    const [product] = await tx
+      .select({ id: products.id })
+      .from(products)
+      .limit(1);
+    if (!product) throw new Error("seed products before variants");
+    await tx.insert(productVariants).values({
+      id: uuidv7(),
+      storeId,
+      productId: product.id,
+      label: `${n} kg`,
+      priceClp: 1000 * n,
     });
   },
 };
