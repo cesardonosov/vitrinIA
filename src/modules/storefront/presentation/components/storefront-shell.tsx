@@ -13,7 +13,7 @@ export function StorefrontShell({ config, children }: StorefrontShellProps) {
   return (
     <div
       style={storeThemeStyle(config.theme)}
-      className="flex min-h-dvh flex-col bg-bg font-body text-text"
+      className="storefront-theme flex min-h-dvh flex-col bg-bg font-body text-text"
     >
       <header className="sticky top-0 z-10 border-b border-border bg-bg px-4 md:px-8">
         <div className="mx-auto flex min-h-14 max-w-5xl items-center gap-3">
