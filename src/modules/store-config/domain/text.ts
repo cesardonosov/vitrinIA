@@ -77,4 +77,8 @@ export const TEXT_LIMITS = Object.freeze({
   sectionSubtitle: 160,
   sectionBody: 2000,
   buttonLabel: 40,
+  paymentDetails: 300,
+  deliveryZoneName: 60,
+  deliveryLeadTime: 60,
+  pickupDetails: 200,
 });

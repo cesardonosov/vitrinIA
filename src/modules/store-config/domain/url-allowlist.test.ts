@@ -107,7 +107,50 @@ describe("checkUrlAgainstRule (mechanism)", () => {
 
 describe("URL_FIELD_ALLOWLIST rows", () => {
   it("has exactly the fields documented in ADR-0004 §3", () => {
-    expect(Object.keys(URL_FIELD_ALLOWLIST)).toEqual(["contact.paymentLink"]);
+    expect(Object.keys(URL_FIELD_ALLOWLIST)).toEqual([
+      "contact.paymentLink",
+      "checkout.mercadoPagoLink",
+      "checkout.flowLink",
+    ]);
+  });
+
+  it("checkout.mercadoPagoLink: https on Mercado Pago Chile hosts only (VIT-185)", () => {
+    const row = URL_FIELD_ALLOWLIST["checkout.mercadoPagoLink"];
+    expect(row.schemes).toEqual(["https:"]);
+    expect(row.hosts).toEqual([
+      "mpago.la",
+      "link.mercadopago.cl",
+      "www.mercadopago.cl",
+    ]);
+    for (const ok of [
+      "https://mpago.la/2AbCdEf",
+      "https://link.mercadopago.cl/tienda",
+      "https://www.mercadopago.cl/checkout/v1/redirect?pref_id=1-2",
+    ]) {
+      expect(checkUrlForField("checkout.mercadoPagoLink", ok).ok).toBe(true);
+    }
+    for (const bad of [
+      "https://mercadopago.cl/x",
+      "https://www.mercadopago.com/x",
+      "https://www.flow.cl/btn.php",
+    ]) {
+      expect(checkUrlForField("checkout.mercadoPagoLink", bad).ok).toBe(false);
+    }
+  });
+
+  it("checkout.flowLink: https on www.flow.cl only (VIT-185)", () => {
+    const row = URL_FIELD_ALLOWLIST["checkout.flowLink"];
+    expect(row.schemes).toEqual(["https:"]);
+    expect(row.hosts).toEqual(["www.flow.cl"]);
+    expect(
+      checkUrlForField(
+        "checkout.flowLink",
+        "https://www.flow.cl/btn.php?token=x",
+      ).ok,
+    ).toBe(true);
+    expect(
+      checkUrlForField("checkout.flowLink", "https://flow.cl.evil.cl/").ok,
+    ).toBe(false);
   });
 
   it("contact.paymentLink: https only and NO hosts until decision E1", () => {
@@ -124,11 +167,10 @@ describe("URL_FIELD_ALLOWLIST rows", () => {
 
   it("rows are frozen (not configurable at runtime)", () => {
     expect(Object.isFrozen(URL_FIELD_ALLOWLIST)).toBe(true);
-    expect(Object.isFrozen(URL_FIELD_ALLOWLIST["contact.paymentLink"])).toBe(
-      true,
-    );
-    expect(
-      Object.isFrozen(URL_FIELD_ALLOWLIST["contact.paymentLink"].hosts),
-    ).toBe(true);
+    for (const row of Object.values(URL_FIELD_ALLOWLIST)) {
+      expect(Object.isFrozen(row)).toBe(true);
+      expect(Object.isFrozen(row.hosts)).toBe(true);
+      expect(Object.isFrozen(row.schemes)).toBe(true);
+    }
   });
 });

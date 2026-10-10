@@ -7,6 +7,7 @@
 export {
   AA_CONTRAST_RATIO,
   contrastRatio,
+  DEFAULT_ON_PRIMARY_COLOR,
   isHexColor,
   meetsAaContrast,
 } from "../domain/color";
@@ -33,7 +34,11 @@ export {
   OLDEST_SUPPORTED_SCHEMA_VERSION,
   type VersionedConfig,
 } from "../domain/migrations/migrate-to-current";
-export { isChileanMobileE164, toWhatsAppDigits } from "../domain/phone";
+export {
+  isChileanMobileE164,
+  isPlaceholderWhatsApp,
+  toWhatsAppDigits,
+} from "../domain/phone";
 export { AVES_PRESET } from "../domain/presets/aves";
 export { ROPA_PRESET } from "../domain/presets/ropa";
 export { isReservedSlug, RESERVED_SLUGS } from "../domain/reserved-slugs";
@@ -47,12 +52,21 @@ export {
   validateSlug,
 } from "../domain/slug";
 export {
+  type BankTransferMethod,
   DEFAULT_FEATURES,
+  type DeliveryZone,
   FEATURE_FLAGS,
   type FeatureFlag,
   type HeroSection,
   type ImageId,
+  MAX_DELIVERY_PRICE_CLP,
+  MAX_DELIVERY_ZONES,
+  MAX_FREE_SHIPPING_FROM_CLP,
   MAX_SECTIONS_PER_PAGE,
+  PAYMENT_METHOD_TYPES,
+  type PaymentLinkMethod,
+  type PaymentMethod,
+  type PaymentMethodType,
   PRODUCT_GRID_MAX_LIMIT,
   PRODUCT_GRID_SOURCES,
   type ProductGridSection,
@@ -60,9 +74,11 @@ export {
   SECTION_TYPES,
   type SectionType,
   STORE_CONFIG_SCHEMA_VERSION,
+  type StoreCheckout,
   type StoreConfig,
   type StoreConfigV1,
   type StoreContact,
+  type StoreDelivery,
   type StoreFeatures,
   type StoreIdentity,
   type StorePage,
@@ -86,4 +102,5 @@ export {
   type ParseStoreConfigError,
   parseStoreConfig,
 } from "./parse-store-config";
+export type { StoreConfigReader } from "./ports/store-config-reader";
 export type { StoreConfigValidator } from "./ports/store-config-validator";

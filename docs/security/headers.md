@@ -6,7 +6,7 @@ Implementa VIT-115 (pre-mortem de Security, control 11). Esta nota se fusionará
 
 | Header | Valor | Dónde |
 |---|---|---|
-| `Content-Security-Policy-Report-Only` | política con `nonce-<por request>` y `'strict-dynamic'` | `src/middleware.ts` + `src/infra/security/csp.ts` |
+| `Content-Security-Policy-Report-Only` | política con `nonce-<por request>` y `'strict-dynamic'` | `src/proxy.ts` (antes `middleware.ts`, ADR-0011) + `src/infra/security/csp.ts` |
 | `Content-Security-Policy` | solo `frame-ancestors 'none'` (**enforced**) | `next.config.ts` |
 | `X-Frame-Options` | `DENY` | `next.config.ts` |
 | `X-Content-Type-Options` | `nosniff` | `next.config.ts` |

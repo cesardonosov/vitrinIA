@@ -23,6 +23,12 @@ import type { UrlNotAllowed } from "./errors";
  *   it depends on Cesar's decision E1 (which payment-link providers a store may
  *   use; see docs/STATUS.md "Esperando a Cesar" #1). Until E1 lands, every
  *   value for this field is rejected and the field stays optional.
+ *   E1 was answered with several methods per store (ADR-0005 §4); they live in
+ *   `checkout.paymentMethods` below. This legacy field stays closed.
+ * - `checkout.mercadoPagoLink`: Mercado Pago Chile payment links: short links
+ *   (`mpago.la`), personalised links (`link.mercadopago.cl`) and checkout
+ *   redirects (`www.mercadopago.cl`). VIT-185.
+ * - `checkout.flowLink`: Flow payment buttons and links (`www.flow.cl`). VIT-185.
  */
 
 export interface UrlFieldRule {
@@ -36,6 +42,18 @@ export const URL_FIELD_ALLOWLIST = Object.freeze({
   "contact.paymentLink": Object.freeze({
     schemes: Object.freeze(["https:"]),
     hosts: Object.freeze([]),
+  }),
+  "checkout.mercadoPagoLink": Object.freeze({
+    schemes: Object.freeze(["https:"]),
+    hosts: Object.freeze([
+      "mpago.la",
+      "link.mercadopago.cl",
+      "www.mercadopago.cl",
+    ]),
+  }),
+  "checkout.flowLink": Object.freeze({
+    schemes: Object.freeze(["https:"]),
+    hosts: Object.freeze(["www.flow.cl"]),
   }),
 }) satisfies Readonly<Record<string, UrlFieldRule>>;
 

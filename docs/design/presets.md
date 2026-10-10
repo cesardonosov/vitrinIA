@@ -22,7 +22,7 @@ Orden de la home (6 secciones, máximo 7):
 5. `text` "Cómo pedir" (contiene la frase placeholder `REEMPLAZAR:` para plazos, zonas de despacho y formas de pago; no se conocen).
 6. `whatsapp-cta`.
 
-Contacto: el preset usa `PLACEHOLDER_WHATSAPP`, porque sirve a cualquier tienda del rubro. El número real de pedidos de Kanuwiñ está en el catálogo semilla (`tests/fixtures/catalog/kanuwin.json`, `contact.whatsapp`) y se aplica al crear la tienda. Los datos de la persona de ventas del PDF no se copiaron a ningún lado.
+Contacto: el preset usa `PLACEHOLDER_WHATSAPP`, porque sirve a cualquier tienda del rubro. El número real de pedidos de Kanuwiñ está en el catálogo semilla (`src/modules/catalog/infrastructure/seed/kanuwin.json`, `contact.whatsapp`) y se aplica al crear la tienda. Los datos de la persona de ventas del PDF no se copiaron a ningún lado.
 
 ### Tema: oscuro
 
@@ -51,7 +51,7 @@ Los tres primeros los exige el validador y `aves.test.ts`; el cuarto lo verifica
 
 ### Catálogo semilla
 
-`tests/fixtures/catalog/kanuwin.json`: 5 productos, 7 variantes, precios en CLP. Las fotos están fuera del repo (`/mnt/project-files/kanuwin/images/`).
+`src/modules/catalog/infrastructure/seed/kanuwin.json`: 5 productos, 7 variantes, precios en CLP. Las fotos, en WebP sin metadatos, están en `public/demo/kanuwin/` (VIT-179).
 
 ## Pendiente
 

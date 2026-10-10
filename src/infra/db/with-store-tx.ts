@@ -1,7 +1,7 @@
 import { sql } from "drizzle-orm";
-import { getEnv } from "@/infra/env";
 import { StoreId } from "@/shared/kernel";
-import { createDatabase, type Database } from "./client";
+import type { Database } from "./client";
+import { defaultDb } from "./default-db";
 
 /** The transaction handle passed to `fn`. Its context is already `app.store_id`. */
 export type StoreTx = Parameters<Parameters<Database["transaction"]>[0]>[0];
@@ -47,17 +47,6 @@ export function bindWithStoreTx(db: Database): WithStoreTx {
       return fn(tx);
     });
   };
-}
-
-let defaultHandle: ReturnType<typeof createDatabase> | undefined;
-
-function defaultDb(): Database {
-  if (!defaultHandle) {
-    // getEnv() already validated DATABASE_URL as a postgres URL; the index signature widens it.
-    const connectionString = String(getEnv().DATABASE_URL);
-    defaultHandle = createDatabase({ connectionString });
-  }
-  return defaultHandle.db;
 }
 
 /** Application entry point, bound to the process-wide pool built from DATABASE_URL (app_user). */

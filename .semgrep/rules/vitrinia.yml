@@ -83,7 +83,7 @@ rules:
   # Convention (see docs/runbooks/ci.md): any header the middleware sets for downstream code uses
   # the `x-vitrinia-` prefix. The store/tenant/user style names are blocked as well, and
   # X-Forwarded-Host is never a source of the host (C12). Reading them is only allowed in
-  # src/middleware.ts itself.
+  # src/proxy.ts itself (formerly middleware.ts, ADR-0011).
   - id: vitrinia-middleware-header-in-authorization
     languages: [typescript]
     severity: ERROR
@@ -99,4 +99,4 @@ rules:
           regex: (?i)^["'`]x-(vitrinia-.*|store-.*|tenant-.*|user-.*|middleware-.*|forwarded-host)["'`]$
     paths:
       include: ["**/src/**"]
-      exclude: ["**/src/middleware.ts", "**/*.test.ts", "**/*.test.tsx"]
+      exclude: ["**/src/proxy.ts", "**/*.test.ts", "**/*.test.tsx"]
