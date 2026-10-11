@@ -75,6 +75,33 @@ const MUTATIONS: readonly Mutation[] = [
     outputContains: ["public.domains"],
   },
   {
+    name: "drop the orders policy",
+    criterion:
+      "Issue 106 / C7: orders only has column-level UPDATE; removing its policy still fails naming the table",
+    up: "drop policy orders_tenant on public.orders;",
+    down: `create policy orders_tenant on public.orders as permissive for all to app_user
+      using (${TENANT_PREDICATE("store_id")}) with check (${TENANT_PREDICATE("store_id")});`,
+    expect: "fail",
+    outputContains: ["public.orders"],
+  },
+  {
+    name: "orders policy replaced by USING (true)",
+    criterion:
+      "Issue 106 / C5: the cross-tenant UPDATE on a column-level grant (orders.status) is exercised and catches a permissive policy",
+    up: `drop policy orders_tenant on public.orders;
+      create policy orders_tenant on public.orders as permissive for all to app_user
+      using (true) with check (true);`,
+    down: `drop policy orders_tenant on public.orders;
+      create policy orders_tenant on public.orders as permissive for all to app_user
+      using (${TENANT_PREDICATE("store_id")}) with check (${TENANT_PREDICATE("store_id")});`,
+    expect: "fail",
+    outputContains: [
+      "public.orders",
+      "UPDATE on rows of B from context A affects 0 rows",
+    ],
+    filter: "dynamic as app_user",
+  },
+  {
     name: "domains without FORCE ROW LEVEL SECURITY",
     criterion:
       "C2 / C6: RLS enabled but not forced is reported naming the table",

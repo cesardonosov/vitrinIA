@@ -82,7 +82,7 @@ Todas tienen además `created_at`, `updated_at` y `version`. Las FK hijas son co
 
 Restricciones que también valida la BD (no solo el caso de uso): precio entero en CLP entre 1 y 100 millones (deja los totales de un pedido lejos de 2^31); `image_src` solo como ruta propia bajo `/demo/` o `/media/`, sin `..` ni esquema; imagen completa o ausente (src, alt, ancho y alto juntos); `nutrition` siempre un arreglo JSON. Índices extra: `(store_id, product_id, position)` en variantes y `(store_id, category_id)` en productos.
 
-Solo los productos con `published = true` y al menos una variante llegan a la vitrina (`createDbCatalogReader`). Rollback: `drizzle/rollbacks/0001_catalog_tables.down.sql` (destruye catálogos).
+Solo los productos con `published = true` y al menos una variante llegan a la vitrina (`createDbCatalogReader`). Rollback: `drizzle/rollbacks/0001_catalog_tables.down.sql` (destruye catálogos). Borra su fila de `drizzle.__drizzle_migrations` por `hash` (sha256 del `.sql`), no por `max(created_at)`: si se aplicó otra migración después, no la desregistra. Si el `.sql` cambiara, recalcular con `sha256sum`.
 
 ## Pedidos (migración 0002_orders_tables, VIT-186)
 
@@ -139,7 +139,7 @@ erDiagram
 | `order_items` | ENABLE + FORCE | ídem | SELECT, INSERT (snapshot inmutable) |
 | `order_contacts` | ENABLE + FORCE | ídem | SELECT, INSERT, UPDATE (la anonimización de VIT-188 lo necesita) |
 
-Ninguna de las tres da `DELETE` a `app_user` (riesgo residual R5 del threat model: el borrado a los 6 años se diseña aparte). `orders` no tiene datos personales; el contacto del comprador vive solo en `order_contacts`, con los CHECK de largo y de "todo o nada" para dirección y factura. Los montos son `bigint` porque 50 líneas x 99 unidades x 100 millones no caben en `int4`; el caso de uso además rechaza pedidos sobre el tope. Rollback: `drizzle/rollbacks/0002_orders_tables.down.sql` (destruye pedidos y contactos).
+Ninguna de las tres da `DELETE` a `app_user` (riesgo residual R5 del threat model: el borrado a los 6 años se diseña aparte). `orders` no tiene datos personales; el contacto del comprador vive solo en `order_contacts`, con los CHECK de largo y de "todo o nada" para dirección y factura. Los montos son `bigint` porque 50 líneas x 99 unidades x 100 millones no caben en `int4`; el caso de uso además rechaza pedidos sobre el tope. Rollback: `drizzle/rollbacks/0002_orders_tables.down.sql` (destruye pedidos y contactos); borra su fila de `__drizzle_migrations` por `hash`, igual que el de 0001.
 
 ## Store Config publicado (migración 0003_store_configs, VIT-191)
 
@@ -159,4 +159,4 @@ erDiagram
 |---|---|---|---|
 | `store_configs` | ENABLE + FORCE | `store_id = NULLIF(...)::uuid` (USING y WITH CHECK) | SELECT, INSERT, UPDATE; sin DELETE |
 
-Una fila por revisión: publicar una versión nueva es insertar `revision + 1` (la edición desde el portal y el `audit_log` son del Sprint 3). Los CHECK son una red de seguridad gruesa (objeto, `schema_version` igual al del documento, tamaño); **el contrato es `parseStoreConfig`**. `schema_version >= 0` porque la cadena de migraciones en memoria arranca en v0 (ADR-0004). Rollback: `drizzle/rollbacks/0003_store_configs.down.sql` (destruye los configs).
+Una fila por revisión: publicar una versión nueva es insertar `revision + 1` (la edición desde el portal y el `audit_log` son del Sprint 3). Los CHECK son una red de seguridad gruesa (objeto, `schema_version` igual al del documento, tamaño); **el contrato es `parseStoreConfig`**. `schema_version >= 0` porque la cadena de migraciones en memoria arranca en v0 (ADR-0004). Rollback: `drizzle/rollbacks/0003_store_configs.down.sql` (destruye los configs); borra su fila de `__drizzle_migrations` por `hash`, igual que 0001 y 0002.
