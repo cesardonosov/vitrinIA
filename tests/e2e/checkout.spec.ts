@@ -141,6 +141,8 @@ test("a missing field shows an error and does not leave the cart", async ({
 }) => {
   await addProduct(page);
   await page.getByRole("button", { name: "Enviar pedido" }).click();
-  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Revisa los datos" }),
+  ).toBeVisible();
   await expect(page.getByRole("heading", { name: "Tu carrito" })).toBeVisible();
 });
