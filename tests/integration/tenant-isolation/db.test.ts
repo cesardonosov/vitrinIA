@@ -130,6 +130,7 @@ describe("harness honesty (C7/G2)", () => {
     const names = catalog.tables.map((t) => t.qualified);
     expect(names).toContain("public.stores");
     expect(names).toContain("public.domains");
+    expect(names).toContain("public.store_configs");
   });
 
   it("the app pool is app_user without superuser; the owner pool is migrator", async () => {

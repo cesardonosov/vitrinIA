@@ -1,23 +1,18 @@
 import { createDbCatalogReader } from "@/modules/catalog/infrastructure/db-catalog-reader";
-import {
-  KANUWIN_DELIVERY,
-  KANUWIN_DEMO_STORE_ID,
-  KANUWIN_HOW_TO_ORDER,
-  KANUWIN_WHATSAPP,
-} from "@/modules/catalog/infrastructure/seed/kanuwin";
+import { buildKanuwinDemoConfig } from "@/modules/catalog/infrastructure/seed/kanuwin-config";
 import type { PlaceOrderDeps } from "@/modules/orders/application";
 import { newOrderCode } from "@/modules/orders/infrastructure/crypto-code";
 import { createDbOrderRepository } from "@/modules/orders/infrastructure/db-order-repository";
 import { createMemoryOrderRateLimiter } from "@/modules/orders/infrastructure/memory-order-rate-limiter";
 import { createTurnstileVerifier } from "@/modules/orders/infrastructure/turnstile-verifier";
-import {
-  AVES_PRESET,
-  parseStoreConfig,
-  type StoreConfig,
-} from "@/modules/store-config/application";
-import { createStaticStoreConfigReader } from "@/modules/store-config/infrastructure/static-store-config-reader";
+import type { StoreConfig } from "@/modules/store-config/application";
+import { createDbStoreConfigReader } from "@/modules/store-config/infrastructure/db-store-config-reader";
 import { zodStoreConfigValidator } from "@/modules/store-config/infrastructure/zod/zod-store-config-validator";
-import type { StorefrontDeps } from "@/modules/storefront/application";
+import type {
+  StorefrontDeps,
+  StoreHostCache,
+} from "@/modules/storefront/application";
+import { createCachedHostResolver } from "@/modules/storefront/infrastructure/cached-store-host-resolver";
 import { dbStoreHostResolver } from "@/modules/storefront/infrastructure/db-store-host-resolver";
 import { withStoreTx } from "./db/with-store-tx";
 import { getEnv } from "./env";
@@ -33,60 +28,44 @@ export const cspReportHandler = createCspReportHandler({
 });
 
 /**
- * Demo store Kanuwiñ (VIT-182): preset `aves` with the store's name, public
- * order number and how-to-order text. Validated here so a bad edit fails at
- * boot, not on a buyer's phone. Moves to the database with VIT-191.
+ * Store Config of the Kanuwiñ demo store. The storefront reads it from Postgres
+ * (VIT-191); this is the source `pnpm db:seed:demo` and the tests load into the database.
  */
 export function kanuwinDemoConfig(): StoreConfig {
-  const sections = AVES_PRESET.pages.home.sections.map((section) =>
-    section.type === "text" && section.props.body.includes("REEMPLAZAR:")
-      ? { ...section, props: { ...section.props, body: KANUWIN_HOW_TO_ORDER } }
-      : section,
-  );
-  const parsed = parseStoreConfig(
-    {
-      ...AVES_PRESET,
-      identity: { ...AVES_PRESET.identity, name: "Kanuwiñ" },
-      contact: { whatsapp: KANUWIN_WHATSAPP },
-      // Provisional demo terms (see seed/README.md). Payment links are not set until the
-      // seller loads real ones from the portal; the transfer text only tells how to pay.
-      checkout: {
-        paymentMethods: [
-          {
-            type: "bank-transfer",
-            details:
-              "Los datos de la transferencia te los enviamos por WhatsApp al confirmar tu pedido.",
-          },
-        ],
-        delivery: {
-          zones: KANUWIN_DELIVERY.zones,
-          freeShippingFromClp: KANUWIN_DELIVERY.freeShippingFromClp,
-        },
-        invoice: false,
-      },
-      pages: { home: { sections } },
-    },
-    zodStoreConfigValidator,
-  );
-  if (!parsed.ok) throw new Error("Kanuwiñ demo Store Config is invalid");
-  return parsed.value;
+  return buildKanuwinDemoConfig(zodStoreConfigValidator);
 }
 
 /** Catalog from Postgres (VIT-183) for every store, Kanuwiñ included (seed: infra/seed/demo-catalog.sql). */
 const catalogReader = createDbCatalogReader(withStoreTx);
-const configs = createStaticStoreConfigReader(
-  new Map([[KANUWIN_DEMO_STORE_ID, kanuwinDemoConfig()]]),
-);
+/** Store Config from Postgres (VIT-191) for every store, validated on every read. */
+const configs = createDbStoreConfigReader({
+  withStoreTx,
+  validator: zodStoreConfigValidator,
+  onInvalid: (storeId, error) =>
+    logger.error({
+      event: "store_config.invalid",
+      storeId,
+      reason: error.code,
+    }),
+});
+
+/**
+ * Host → store with an in-memory cache (VIT-192, ADR-0003 §1): TTL <= 60 s, bounded,
+ * per process. Use cases that rename, unpublish, verify or reassign a domain receive
+ * `storeHostCache` and invalidate it after committing (see StoreHostCache).
+ */
+const hostResolver = createCachedHostResolver(dbStoreHostResolver);
+export const storeHostCache: StoreHostCache = hostResolver;
 
 export const storefrontDeps: StorefrontDeps = {
-  hosts: dbStoreHostResolver,
+  hosts: hostResolver,
   configs,
   catalog: catalogReader,
 };
 
 /** Checkout (VIT-186). The verifier and its keys are read per request, never at import. */
 export const ordersDeps: PlaceOrderDeps = {
-  hosts: dbStoreHostResolver,
+  hosts: hostResolver,
   configs,
   catalog: catalogReader,
   orders: createDbOrderRepository({ withStoreTx, newCode: newOrderCode }),

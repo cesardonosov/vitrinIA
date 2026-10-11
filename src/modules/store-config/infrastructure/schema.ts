@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   check,
   integer,
+  jsonb,
   pgTable,
   text,
   timestamp,
@@ -106,7 +107,53 @@ export const domains = pgTable(
   ],
 );
 
+/**
+ * Published Store Config of a store (VIT-191, ADR-0004). One row per revision;
+ * the storefront reads the highest `revision`. The `config` is jsonb written
+ * already validated by `parseStoreConfig` (the application validates on write
+ * AND on read: the CHECKs below are only a coarse safety net, not the contract).
+ * `schema_version` mirrors `config->'schemaVersion'` (CHECK) so a worker can
+ * find rows to migrate without parsing every document (ADR-0004 §4).
+ *
+ * `store_id` -> stores(id) and RLS/grants are in the hand-written section of
+ * drizzle/migrations/0003_store_configs.sql.
+ */
+export const storeConfigs = pgTable(
+  "store_configs",
+  {
+    id: uuid("id").primaryKey(),
+    storeId: uuid("store_id").notNull(),
+    revision: integer("revision").notNull(),
+    schemaVersion: integer("schema_version").notNull(),
+    config: jsonb("config").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    version: integer("version").notNull().default(1),
+  },
+  (t) => [
+    unique("store_configs_store_id_id_key").on(t.storeId, t.id),
+    unique("store_configs_store_id_revision_key").on(t.storeId, t.revision),
+    check(
+      "store_configs_id_uuid_v7",
+      sql`id::text ~ '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'`,
+    ),
+    check("store_configs_revision_positive", sql`${t.revision} >= 1`),
+    check("store_configs_schema_version_nonneg", sql`${t.schemaVersion} >= 0`),
+    check(
+      "store_configs_config_shape",
+      sql`jsonb_typeof(${t.config}) = 'object' AND ${t.config} -> 'schemaVersion' = to_jsonb(${t.schemaVersion}) AND octet_length(${t.config}::text) <= 65536`,
+    ),
+    check("store_configs_version_positive", sql`${t.version} >= 1`),
+  ],
+);
+
 export type StoreRow = typeof stores.$inferSelect;
 export type NewStoreRow = typeof stores.$inferInsert;
 export type DomainRow = typeof domains.$inferSelect;
 export type NewDomainRow = typeof domains.$inferInsert;
+export type StoreConfigRow = typeof storeConfigs.$inferSelect;
+export type NewStoreConfigRow = typeof storeConfigs.$inferInsert;

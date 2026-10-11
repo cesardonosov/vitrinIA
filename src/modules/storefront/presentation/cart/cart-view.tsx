@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { cartCount, cartSubtotal, setQuantity } from "../../domain/cart";
+import { lookupItem } from "./item-lookup";
 import { useCart } from "./use-cart";
 
 /** Display data per variant, built on the server from the catalog. */
@@ -59,10 +60,13 @@ export function CartView({
 }: CartViewProps) {
   const [cart, update] = useCart();
   const lines = cart.flatMap((line) => {
-    const info = items[line.variantId];
+    const info = lookupItem(items, line.variantId);
     return info ? [{ ...line, info }] : [];
   });
-  const subtotal = cartSubtotal(cart, (id) => items[id]?.unitPriceClp);
+  const subtotal = cartSubtotal(
+    cart,
+    (id) => lookupItem(items, id)?.unitPriceClp,
+  );
 
   if (lines.length === 0) {
     return (

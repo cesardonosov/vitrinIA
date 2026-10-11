@@ -2,11 +2,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { kanuwinDemoConfig } from "@/infra/container";
 import type { DatabaseHandle } from "@/infra/db/client";
 import { bindResolveHost } from "@/infra/db/resolve-host";
+import { bindWithStoreTx } from "@/infra/db/with-store-tx";
 import { EMPTY_CATALOG } from "@/modules/catalog/application";
 import { KANUWIN_CATALOG } from "@/modules/catalog/infrastructure/seed/kanuwin";
 import { createSeedCatalogReader } from "@/modules/catalog/infrastructure/seed/seed-catalog";
 import { ROPA_PRESET } from "@/modules/store-config/application";
-import { createStaticStoreConfigReader } from "@/modules/store-config/infrastructure/static-store-config-reader";
+import { createDbStoreConfigReader } from "@/modules/store-config/infrastructure/db-store-config-reader";
+import { zodStoreConfigValidator } from "@/modules/store-config/infrastructure/zod/zod-store-config-validator";
 import {
   loadStorefront,
   loadStorefrontProduct,
@@ -17,6 +19,7 @@ import {
   openMigrator,
   type SeededStore,
   seedStore,
+  seedStoreConfig,
   truncateAll,
 } from "./helpers";
 
@@ -45,16 +48,16 @@ beforeEach(async () => {
   A = await seedStore(app, "tienda-a");
   B = await seedStore(app, "tienda-b");
   unverified = await seedStore(app, "tienda-c", { verified: false });
+  await seedStoreConfig(app, A.id, kanuwinDemoConfig());
+  await seedStoreConfig(app, B.id, ROPA_PRESET);
+  await seedStoreConfig(app, unverified.id, ROPA_PRESET);
   const resolve = bindResolveHost(app.db);
   deps = {
     hosts: { resolve },
-    configs: createStaticStoreConfigReader(
-      new Map([
-        [A.id, kanuwinDemoConfig()],
-        [B.id, ROPA_PRESET],
-        [unverified.id, ROPA_PRESET],
-      ]),
-    ),
+    configs: createDbStoreConfigReader({
+      withStoreTx: bindWithStoreTx(app.db),
+      validator: zodStoreConfigValidator,
+    }),
     catalog: createSeedCatalogReader(new Map([[A.id, KANUWIN_CATALOG]])),
   };
 });
